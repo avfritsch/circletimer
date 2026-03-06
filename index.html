@@ -578,7 +578,7 @@ function applyLang(){
   // Update lang toggle to show CURRENT language
   document.getElementById('lang-toggle').textContent = currentLang.toUpperCase();
   // Refresh display if timer running
-  if (timer) updateDisplay();
+  if (state.timer) safeRun(updateDisplay, "updateDisplay");
 }
 
 function cycleLang(){
@@ -856,8 +856,8 @@ function updateCircle(){
 // ── TIMER LOGIC ───────────────────────────────────────────────────────────────
 function startExercise(){
   try { getAudio(); } catch(e){}
-  // Freeze cfg for the duration — prevents accidental mutation corrupting getPhaseDur()
-  Object.freeze(cfg);
+  // Snapshot cfg into state as a frozen copy — cfg itself stays mutable for config screen
+  state.cfgSnapshot = Object.freeze({ ...cfg });
   state.round = 1;
   state.station = 1;
   state.phase = 'work';
@@ -922,10 +922,11 @@ function advance(){
 }
 
 function advanceFromWork(){
-  if (state.station < cfg.stations){
+  const cfgNow = state.cfgSnapshot || cfg;
+  if (state.station < cfgNow.stations){
     startPhase('pause');
     beep(BEEP.phaseEnd, 0.2, 0.5);
-  } else if (state.round < cfg.rounds){
+  } else if (state.round < cfgNow.rounds){
     startPhase('roundPause');
     beep(BEEP.roundEnd, 0.4, 0.6);
   } else {
@@ -969,7 +970,7 @@ function skipBack(){
       startPhase('work');
     } else if (state.phase === 'work'){
       if (state.station > 1){ state.station--; startPhase('pause'); }
-      else if (state.round > 1){ state.round--; state.station = cfg.stations; startPhase('work'); resetCircleOpacities(); }
+      else if (state.round > 1){ state.round--; state.station = (state.cfgSnapshot||cfg).stations; startPhase('work'); resetCircleOpacities(); }
       else { startPhase('work'); }
     } else if (state.phase === 'roundPause'){
       state.station = cfg.stations; startPhase('work');
@@ -981,7 +982,8 @@ function skipBack(){
   safeRun(updateCircle, 'updateCircle');
 }
 function getPhaseDur(){
-  return state.phase === 'work' ? cfg.work : state.phase === 'pause' ? cfg.pause : cfg.roundPause;
+  const c = state.cfgSnapshot || cfg;
+  return state.phase === 'work' ? c.work : state.phase === 'pause' ? c.pause : c.roundPause;
 }
 
 // ── DISPLAY ───────────────────────────────────────────────────────────────────
@@ -1072,8 +1074,7 @@ function finishExercise(){
 }
 function resetToConfig(){
   if (state.timer){ clearInterval(state.timer); state.timer = null; }
-  // Unfreeze cfg so config screen can modify it again
-  Object.assign(cfg, cfg);  // creates a new unfrozen copy in place
+  state.cfgSnapshot = null; // release snapshot, cfg is mutable again
   showScreen('config-screen');
 }
 function showScreen(id){
