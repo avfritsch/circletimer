@@ -78,6 +78,9 @@
 
   .config-card{ background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:24px; width:100%; margin-bottom:16px; }
   .config-card-title{ font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+  .total-time-bar{ width:100%; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 20px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; }
+  .total-time-label{ font-size:12px; color:var(--text-dim); letter-spacing:1px; text-transform:uppercase; }
+  .total-time-value{ font-family:"Bebas Neue",sans-serif; font-size:28px; letter-spacing:2px; color:var(--accent-work); }
   .config-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
   .config-row:last-child{ margin-bottom:0; }
   .config-label{ display:flex; flex-direction:column; gap:2px; }
@@ -169,8 +172,8 @@
     font-size:26px; letter-spacing:2px; cursor:pointer; transition:transform 0.15s, opacity 0.15s;
   }
   .ctrl-btn:active{ transform:scale(0.96); opacity:0.85; }
-  #pause-btn{ background:var(--surface2); color:var(--text); border:1px solid var(--border); }
-  #stop-btn{ background:#2a1515; color:#ff5555; border:1px solid #3a2020; }
+  #pause-btn{ background:var(--surface2); color:var(--text); border:1px solid var(--border); flex:3; }
+  #stop-btn{ background:none; color:#ff5555; border:1px solid #3a2020; flex:1; font-size:16px; padding:18px 8px; }
 
   /* ── DONE ── */
   #done-screen{ justify-content:center; align-items:center; padding:48px 24px; gap:16px; text-align:center; }
@@ -207,6 +210,9 @@
   .info-feature-dot{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }
   .info-feature-text{ font-size:14px; line-height:1.5; }
   .info-feature-text strong{ font-weight:600; display:block; margin-bottom:2px; }
+  /* confirm modal */
+  #confirm-modal .modal{ gap:12px; }
+  .confirm-text{ font-size:15px; color:var(--text-dim); line-height:1.5; }
 </style>
 </head>
 <body>
@@ -214,7 +220,7 @@
 <!-- ── CONFIG ── -->
 <div id="config-screen" class="screen active">
   <div class="top-nav">
-    <button class="lang-btn" onclick="cycleLang()" id="lang-toggle">EN</button>
+    <button class="lang-btn" onclick="cycleLang()" id="lang-toggle">DE</button>
     <button class="nav-icon-btn" onclick="showScreen('info-screen')" title="Info">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
@@ -245,6 +251,12 @@
         <button class="modal-btn modal-save" onclick="savePreset()" data-i18n="save">Speichern</button>
       </div>
     </div>
+  </div>
+
+  <!-- Total time bar -->
+  <div class="total-time-bar">
+    <span class="total-time-label" data-i18n="totalTime">Gesamtdauer</span>
+    <span class="total-time-value" id="total-time-display">—</span>
   </div>
 
   <div class="config-card">
@@ -308,6 +320,18 @@
   </div>
 </div>
 
+<!-- ── CONFIRM STOP MODAL ── -->
+<div class="modal-overlay" id="confirm-modal" onclick="closeConfirmModal(event)">
+  <div class="modal" id="confirm-modal" style="gap:12px">
+    <div class="modal-title" data-i18n="confirmTitle">Training beenden?</div>
+    <div class="confirm-text" data-i18n="confirmText">Dein Fortschritt geht verloren.</div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-cancel" onclick="closeConfirmModal()" data-i18n="confirmCancel">Weiter trainieren</button>
+      <button class="modal-btn" onclick="confirmStop()" style="background:#ff5555;color:#fff" data-i18n="confirmStop">Beenden</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── TIMER ── -->
 <div id="timer-screen" class="screen">
   <div class="timer-header">
@@ -343,7 +367,7 @@
 
   <div class="timer-controls">
     <button class="ctrl-btn" id="pause-btn" onclick="togglePause()" data-i18n="pauseBtn">PAUSE</button>
-    <button class="ctrl-btn" id="stop-btn" onclick="stopExercise()" data-i18n="stopBtn">STOP</button>
+    <button class="ctrl-btn" id="stop-btn" onclick="openConfirmModal()" data-i18n="stopBtn">STOP</button>
   </div>
 </div>
 
@@ -444,6 +468,8 @@ const T = {
     feat6Title:'Navigation', feat6Text:'Springe jederzeit zur nächsten oder vorherigen Station.',
     infoTip:'Tipp', infoTipText:'Füge diese Seite in Safari zum Home-Bildschirm hinzu: Teilen → "Zum Home-Bildschirm".',
     AUSFUHRUNG:'AUSFÜHRUNG', PAUSE:'PAUSE', RUNDENPAUSE:'RUNDENPAUSE',
+    totalTime:'Gesamtdauer', confirmTitle:'Training beenden?', confirmText:'Dein Fortschritt geht verloren.',
+    confirmCancel:'Weiter trainieren', confirmStop:'Beenden', deleteConfirm:'Preset löschen?',
   },
   en: {
     subtitle:'Circuit Training · Timer', noPresets:'No presets saved',
@@ -467,6 +493,8 @@ const T = {
     feat6Title:'Navigation', feat6Text:'Skip to the next or previous station at any time.',
     infoTip:'Tip', infoTipText:'Add this page to your Home Screen in Safari: Share → "Add to Home Screen".',
     AUSFUHRUNG:'WORK', PAUSE:'REST', RUNDENPAUSE:'ROUND REST',
+    totalTime:'Total Duration', confirmTitle:'End workout?', confirmText:'Your progress will be lost.',
+    confirmCancel:'Keep going', confirmStop:'End', deleteConfirm:'Delete preset?',
   },
   es: {
     subtitle:'Entrenamiento en Circuito · Timer', noPresets:'Sin presets guardados',
@@ -490,6 +518,8 @@ const T = {
     feat6Title:'Navegación', feat6Text:'Salta a la siguiente o anterior estación en cualquier momento.',
     infoTip:'Consejo', infoTipText:'Añade esta página a la pantalla de inicio en Safari: Compartir → "Añadir a pantalla de inicio".',
     AUSFUHRUNG:'EJECUCIÓN', PAUSE:'PAUSA', RUNDENPAUSE:'PAUSA RONDA',
+    totalTime:'Duración total', confirmTitle:'¿Terminar entreno?', confirmText:'Tu progreso se perderá.',
+    confirmCancel:'Seguir', confirmStop:'Terminar', deleteConfirm:'¿Eliminar preset?',
   }
 };
 
@@ -511,9 +541,8 @@ function applyLang(){
   document.querySelectorAll('.station-name-input').forEach((inp,i) => {
     inp.placeholder = `${t('station')} ${i+1}`;
   });
-  // Update lang toggle to show NEXT language
-  const nextIdx = (LANGS.indexOf(currentLang) + 1) % LANGS.length;
-  document.getElementById('lang-toggle').textContent = LANGS[nextIdx].toUpperCase();
+  // Update lang toggle to show CURRENT language
+  document.getElementById('lang-toggle').textContent = currentLang.toUpperCase();
   // Refresh display if timer running
   if (timer) updateDisplay();
 }
@@ -544,6 +573,7 @@ window.addEventListener('DOMContentLoaded', () => {
   renderStationInputs();
   renderPresets();
   applyLang();
+  calcTotalTime();
 });
 
 // ── AUDIO ─────────────────────────────────────────────────────────────────────
@@ -561,11 +591,23 @@ function beep(freq=880, duration=0.12, volume=0.5){
 }
 
 // ── CONFIG UI ─────────────────────────────────────────────────────────────────
+function calcTotalTime(){
+  const stationsWork = cfg.stations * cfg.work;
+  const stationsPause = (cfg.stations - 1) * cfg.pause;
+  const roundTime = stationsWork + stationsPause;
+  const totalSec = cfg.rounds * roundTime + (cfg.rounds - 1) * cfg.roundPause;
+  const mins = Math.floor(totalSec / 60);
+  const secs = totalSec % 60;
+  const el = document.getElementById('total-time-display');
+  if (el) el.textContent = secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+}
+
 function change(key, delta){
   const [min,max] = limits[key];
   cfg[key] = Math.min(max, Math.max(min, cfg[key] + delta));
   document.getElementById('val-'+key).textContent = cfg[key];
   if (key === 'stations') renderStationInputs();
+  calcTotalTime();
 }
 
 function renderStationInputs(){
@@ -639,9 +681,11 @@ function loadPreset(index){
     const inputs = document.querySelectorAll('.station-name-input');
     if (inputs[i]) inputs[i].value = name;
   });
+  calcTotalTime();
 }
 function deletePreset(index,e){
   e.stopPropagation();
+  if (!confirm(t('deleteConfirm'))) return;
   const presets = loadPresetsFromStorage();
   presets.splice(index,1);
   savePresetsToStorage(presets);
@@ -763,6 +807,7 @@ function startExercise(){
   svgSegs=buildCircleSVG();
   showScreen('timer-screen');
   updateDisplay(); updateCircle();
+  requestWakeLock();
   timer=setInterval(tick,1000);
 }
 
@@ -851,6 +896,42 @@ function updateDisplay(){
   }
 }
 
+// ── WAKELOCK ─────────────────────────────────────────────────────────────────
+let wakeLock = null;
+async function requestWakeLock(){
+  try {
+    if ('wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e){}
+}
+function releaseWakeLock(){
+  if (wakeLock){ wakeLock.release(); wakeLock = null; }
+}
+// Re-acquire on visibility change (iOS releases it when tab hides)
+document.addEventListener('visibilitychange', ()=>{
+  if (document.visibilityState === 'visible' && timer && !isPaused) requestWakeLock();
+});
+
+// ── CONFIRM STOP ──────────────────────────────────────────────────────────────
+function openConfirmModal(){
+  isPaused = true;
+  document.getElementById('pause-btn').textContent = t('resumeBtn');
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function closeConfirmModal(e){
+  if (e && e.target !== document.getElementById('confirm-modal')) return;
+  document.getElementById('confirm-modal').classList.remove('open');
+  isPaused = false;
+  document.getElementById('pause-btn').textContent = t('pauseBtn');
+}
+function confirmStop(){
+  document.getElementById('confirm-modal').classList.remove('open');
+  releaseWakeLock();
+  clearInterval(timer); timer = null;
+  resetToConfig();
+}
+
 function togglePause(){
   isPaused = !isPaused;
   document.getElementById('pause-btn').textContent = isPaused ? t('resumeBtn') : t('pauseBtn');
@@ -863,6 +944,7 @@ function finishExercise(){
   document.getElementById('done-rounds').textContent = cfg.rounds;
   document.getElementById('done-stations').textContent = cfg.rounds*cfg.stations;
   document.getElementById('done-time').textContent = mins;
+  releaseWakeLock();
   beep(660,0.15); setTimeout(()=>beep(880,0.15),200); setTimeout(()=>beep(1100,0.3),400);
   showScreen('done-screen');
 }
