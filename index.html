@@ -21,11 +21,7 @@
   .screen{ display:none; width:100%; min-height:100dvh; flex-direction:column; align-items:center; }
   .screen.active{ display:flex; }
 
-  /* ── TOP NAV ── */
-  .top-nav{
-    width:100%; display:flex; justify-content:flex-end; align-items:center;
-    padding:52px 24px 0; gap:8px;
-  }
+  /* ── TOP NAV / APP HEADER ── */
   .nav-icon-btn{
     background:none; border:none; color:var(--text-dim); cursor:pointer;
     padding:8px; border-radius:10px; transition:color 0.2s;
@@ -41,6 +37,12 @@
 
   /* ── CONFIG ── */
   #config-screen{ padding:0 24px 32px; gap:0; }
+  .app-header{
+    width:100%; display:flex; justify-content:space-between; align-items:center;
+    padding:52px 0 20px;
+  }
+  .app-header-left{ display:flex; flex-direction:column; gap:2px; }
+  .app-header-right{ display:flex; align-items:center; gap:8px; }
   .app-title{
     font-family:'Bebas Neue',sans-serif; font-size:42px; letter-spacing:4px;
     background:linear-gradient(135deg,var(--accent-work),var(--accent-round));
@@ -51,6 +53,7 @@
   .preset-bar{ width:100%; display:flex; gap:8px; margin-bottom:16px; align-items:center; }
   .preset-scroll{ display:flex; gap:8px; overflow-x:auto; flex:1; padding-bottom:2px; scrollbar-width:none; }
   .preset-scroll::-webkit-scrollbar{ display:none; }
+  .no-presets-msg{ font-size:13px; color:var(--text-dim); padding:8px 0; white-space:nowrap; }
   .preset-chip{
     flex-shrink:0; padding:8px 14px; background:var(--surface); border:1px solid var(--border);
     border-radius:20px; font-size:13px; cursor:pointer; white-space:nowrap;
@@ -76,14 +79,16 @@
   .modal-cancel{ background:var(--surface2); color:var(--text); border:1px solid var(--border); }
 
   .config-card{ background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:24px; width:100%; margin-bottom:16px; }
+  .config-card-last{ margin-bottom:0; }
   .config-card-title{ font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
-  .total-time-bar{ width:100%; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 20px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; }
-  .total-time-label{ font-size:12px; color:var(--text-dim); letter-spacing:1px; text-transform:uppercase; }
-  .total-time-value{ font-family:"Bebas Neue",sans-serif; font-size:28px; letter-spacing:2px; color:var(--accent-work); }
+  /* total time shown on timer screen instead */
   .config-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
   .config-row:last-child{ margin-bottom:0; }
   .config-label{ display:flex; flex-direction:column; gap:2px; }
   .config-label span:first-child{ font-size:15px; font-weight:500; }
+  .label-work{ color:var(--accent-work) !important; }
+  .label-pause{ color:var(--accent-pause) !important; }
+  .label-round{ color:var(--accent-round) !important; }
   .config-label span:last-child{ font-size:12px; color:var(--text-dim); }
 
   .stepper{ display:flex; align-items:center; background:var(--surface2); border-radius:12px; overflow:hidden; }
@@ -105,7 +110,7 @@
   .dot-round{ background:var(--accent-round); }
 
   .start-btn{
-    margin-top:8px; width:100%; padding:20px;
+    margin-top:16px; margin-bottom:16px; width:100%; padding:20px;
     background:linear-gradient(135deg,var(--accent-work),var(--accent-work-dark));
     border:none; border-radius:18px; font-family:'Bebas Neue',sans-serif;
     font-size:28px; letter-spacing:3px; color:#0a0a0f; cursor:pointer;
@@ -119,6 +124,9 @@
   #timer-screen{ padding:0; position:relative; justify-content:flex-start; }
 
   .timer-header{ width:100%; display:flex; justify-content:space-between; align-items:center; padding:52px 24px 8px; }
+  .total-badge{ display:flex; flex-direction:column; align-items:center; }
+  .total-badge-label{ font-size:11px; color:var(--text); letter-spacing:2px; text-transform:uppercase; font-weight:600; }
+  .total-badge-value{ font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:2px; line-height:1; color:var(--text-dim); }
   .round-badge,.station-badge{ display:flex; flex-direction:column; }
   .round-badge{ align-items:flex-start; }
   .station-badge{ align-items:flex-end; }
@@ -222,24 +230,25 @@
 
 <!-- ── CONFIG ── -->
 <div id="config-screen" class="screen active">
-  <div class="top-nav">
-    <button class="lang-btn" onclick="cycleLang()" id="lang-toggle">DE</button>
-    <button class="nav-icon-btn" onclick="showScreen('info-screen')" title="Info">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-      </svg>
-    </button>
-  </div>
-
   <div class="app-header">
-    <div class="app-title">Ryng</div>
-    <div class="app-subtitle" data-i18n="subtitle">Zirkeltraining · Timer</div>
+    <div class="app-header-left">
+      <div class="app-title">Ryng</div>
+      <div class="app-subtitle" data-i18n="subtitle">Circuit Training · Timer</div>
+    </div>
+    <div class="app-header-right">
+      <button class="lang-btn" onclick="cycleLang()" id="lang-toggle">DE</button>
+      <button class="nav-icon-btn" onclick="showScreen('info-screen')" title="Info">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <!-- Preset bar -->
   <div class="preset-bar">
     <div class="preset-scroll" id="preset-scroll">
-      <div style="font-size:13px;color:var(--text-dim);padding:8px 0;white-space:nowrap" data-i18n="noPresets">Keine Presets gespeichert</div>
+      <div class="no-presets-msg" data-i18n="noPresets">Keine Presets gespeichert</div>
     </div>
     <button class="save-preset-btn" onclick="openSaveModal()" data-i18n="saveBtn">＋ Speichern</button>
   </div>
@@ -254,12 +263,6 @@
         <button class="modal-btn modal-save" onclick="savePreset()" data-i18n="save">Speichern</button>
       </div>
     </div>
-  </div>
-
-  <!-- Total time bar -->
-  <div class="total-time-bar">
-    <span class="total-time-label" data-i18n="totalTime">Gesamtdauer</span>
-    <span class="total-time-value" id="total-time-display">—</span>
   </div>
 
   <div class="config-card">
@@ -282,10 +285,10 @@
     </div>
   </div>
 
-  <div class="config-card">
+  <div class="config-card config-card-last">
     <div class="config-card-title" data-i18n="times">Zeiten</div>
     <div class="config-row">
-      <div class="config-label"><span><span class="dot-work"></span><span data-i18n="work">Ausführung</span></span><span data-i18n="workSub">Aktive Zeit pro Station</span></div>
+      <div class="config-label"><span class="label-work" data-i18n="work">Ausführung</span><span data-i18n="workSub">Aktive Zeit pro Station</span></div>
       <div class="stepper">
         <button onclick="change('work',-5)">−</button>
         <div class="stepper-value" id="val-work">40</div>
@@ -293,7 +296,7 @@
       </div>
     </div>
     <div class="config-row">
-      <div class="config-label"><span><span class="dot-pause"></span><span data-i18n="pause">Pause</span></span><span data-i18n="pauseSub">Zwischen Stationen</span></div>
+      <div class="config-label"><span class="label-pause" data-i18n="pause">Pause</span><span data-i18n="pauseSub">Zwischen Stationen</span></div>
       <div class="stepper">
         <button onclick="change('pause',-5)">−</button>
         <div class="stepper-value" id="val-pause">20</div>
@@ -301,7 +304,7 @@
       </div>
     </div>
     <div class="config-row">
-      <div class="config-label"><span><span class="dot-round"></span><span data-i18n="roundPause">Rundenpause</span></span><span data-i18n="roundPauseSub">Zwischen Runden</span></div>
+      <div class="config-label"><span class="label-round" data-i18n="roundPause">Rundenpause</span><span data-i18n="roundPauseSub">Zwischen Runden</span></div>
       <div class="stepper">
         <button onclick="change('roundPause',-5)">−</button>
         <div class="stepper-value" id="val-roundPause">60</div>
@@ -341,6 +344,10 @@
     <div class="round-badge">
       <span class="round-label" data-i18n="round">Runde</span>
       <span class="round-value" id="round-display">1 / 3</span>
+    </div>
+    <div class="total-badge">
+      <span class="total-badge-label" data-i18n="totalTime">Gesamt</span>
+      <span class="total-badge-value" id="total-time-display">—</span>
     </div>
     <div class="station-badge">
       <span class="station-label" data-i18n="station">Station</span>
@@ -623,7 +630,7 @@ function cacheDOM(){
   DOM.phaseLabel     = document.getElementById('phase-label');
   DOM.stationName    = document.getElementById('station-name-display');
   DOM.pauseBtn       = document.getElementById('pause-btn');
-  DOM.totalTime      = document.getElementById('total-time-display');
+  DOM.totalTime      = document.getElementById('total-time-display'); // on timer screen
   DOM.confirmModal   = document.getElementById('confirm-modal');
   DOM.doneRounds     = document.getElementById('done-rounds');
   DOM.doneStations   = document.getElementById('done-stations');
@@ -656,13 +663,16 @@ function beep(freq=880, duration=0.12, volume=0.5){
 
 // ── CONFIG UI ─────────────────────────────────────────────────────────────────
 function calcTotalTime(){
-  const stationsWork = cfg.stations * cfg.work;
-  const stationsPause = (cfg.stations - 1) * cfg.pause;
-  const roundTime = stationsWork + stationsPause;
-  const totalSec = cfg.rounds * roundTime + (cfg.rounds - 1) * cfg.roundPause;
+  const el = document.getElementById('total-time-display');
+  if (!el) return;
+  const cfgNow        = state.cfgSnapshot || cfg;
+  const stationsWork  = cfgNow.stations * cfgNow.work;
+  const stationsPause = (cfgNow.stations - 1) * cfgNow.pause;
+  const roundTime     = stationsWork + stationsPause;
+  const totalSec      = cfgNow.rounds * roundTime + (cfgNow.rounds - 1) * cfgNow.roundPause;
   const mins = Math.floor(totalSec / 60);
   const secs = totalSec % 60;
-  if (DOM.totalTime) DOM.totalTime.textContent = secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+  el.textContent = secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
 }
 
 function change(key, delta){
@@ -858,6 +868,10 @@ function startExercise(){
   try { getAudio(); } catch(e){}
   // Snapshot cfg into state as a frozen copy — cfg itself stays mutable for config screen
   state.cfgSnapshot = Object.freeze({ ...cfg });
+  // Reset display then populate with correct duration
+  const totalEl = document.getElementById('total-time-display');
+  if (totalEl) totalEl.textContent = '—';
+  calcTotalTime();
   state.round = 1;
   state.station = 1;
   state.phase = 'work';
