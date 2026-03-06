@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>CircleTimer</title>
+<title>Ryng</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -41,7 +41,6 @@
 
   /* ── CONFIG ── */
   #config-screen{ padding:0 24px 32px; gap:0; }
-  .config-top{ display:flex; justify-content:space-between; align-items:flex-end; width:100%; margin-bottom:20px; }
   .app-title{
     font-family:'Bebas Neue',sans-serif; font-size:42px; letter-spacing:4px;
     background:linear-gradient(135deg,var(--accent-work),var(--accent-round));
@@ -91,7 +90,6 @@
   .stepper button{ background:none; border:none; color:var(--text); font-size:22px; width:44px; height:44px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
   .stepper button:active{ background:var(--border); }
   .stepper-value{ font-family:'Bebas Neue',sans-serif; font-size:24px; min-width:52px; text-align:center; letter-spacing:1px; }
-  .stepper-unit{ font-size:11px; color:var(--text-dim); padding-right:12px; }
 
   .stations-card{ background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:24px; width:100%; margin-bottom:16px; }
   .station-inputs{ display:flex; flex-direction:column; gap:10px; margin-top:4px; }
@@ -101,13 +99,14 @@
   .station-name-input:focus{ border-color:var(--accent-work); }
   .station-name-input::placeholder{ color:var(--text-dim); }
 
-  .dot-work{ width:8px; height:8px; border-radius:50%; background:var(--accent-work); display:inline-block; margin-right:6px; }
-  .dot-pause{ width:8px; height:8px; border-radius:50%; background:var(--accent-pause); display:inline-block; margin-right:6px; }
-  .dot-round{ width:8px; height:8px; border-radius:50%; background:var(--accent-round); display:inline-block; margin-right:6px; }
+  .dot-work,.dot-pause,.dot-round{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+  .dot-work{ background:var(--accent-work); }
+  .dot-pause{ background:var(--accent-pause); }
+  .dot-round{ background:var(--accent-round); }
 
   .start-btn{
     margin-top:8px; width:100%; padding:20px;
-    background:linear-gradient(135deg,var(--accent-work),#00b87a);
+    background:linear-gradient(135deg,var(--accent-work),var(--accent-work-dark));
     border:none; border-radius:18px; font-family:'Bebas Neue',sans-serif;
     font-size:28px; letter-spacing:3px; color:#0a0a0f; cursor:pointer;
     display:flex; align-items:center; justify-content:center; gap:12px;
@@ -123,7 +122,7 @@
   .round-badge,.station-badge{ display:flex; flex-direction:column; }
   .round-badge{ align-items:flex-start; }
   .station-badge{ align-items:flex-end; }
-  .round-label,.station-label{ font-size:11px; color:#d0d0e8; letter-spacing:2px; text-transform:uppercase; font-weight:600; }
+  .round-label,.station-label{ font-size:11px; color:var(--text); letter-spacing:2px; text-transform:uppercase; font-weight:600; }
   .round-value,.station-value{ font-family:'Bebas Neue',sans-serif; font-size:36px; letter-spacing:2px; line-height:1; }
 
   /* Circle — centered, bigger */
@@ -144,7 +143,6 @@
     text-align:center; font-weight:600; line-height:1.3;
     max-width:130px; word-break:break-word;
   }
-  .station-name-display{ display:none; }
   .countdown{
     font-family:'Bebas Neue',sans-serif; font-size:clamp(64px,18vw,90px);
     letter-spacing:-2px; line-height:1;
@@ -188,7 +186,7 @@
   .stat{ display:flex; flex-direction:column; align-items:center; gap:4px; }
   .stat-num{ font-family:'Bebas Neue',sans-serif; font-size:36px; letter-spacing:2px; }
   .stat-label{ font-size:11px; color:var(--text-dim); letter-spacing:1px; text-transform:uppercase; }
-  .again-btn{ width:100%; padding:20px; background:linear-gradient(135deg,var(--accent-work),#00b87a); border:none; border-radius:18px; font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:3px; color:#0a0a0f; cursor:pointer; }
+  .again-btn{ width:100%; padding:20px; background:linear-gradient(135deg,var(--accent-work),var(--accent-work-dark)); border:none; border-radius:18px; font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:3px; color:#0a0a0f; cursor:pointer; }
 
   /* ── INFO SCREEN ── */
   #info-screen{ padding:0 24px 48px; align-items:flex-start; }
@@ -213,6 +211,11 @@
   /* confirm modal */
   #confirm-modal .modal{ gap:12px; }
   .confirm-text{ font-size:15px; color:var(--text-dim); line-height:1.5; }
+  /* app header */
+  .app-header{ padding:0 0 20px; width:100%; }
+  /* danger action */
+  .modal-danger{ background:var(--color-danger); color:#fff; }
+  :root{ --color-danger:#ff5555; --accent-work-dark:#00b87a; }
 </style>
 </head>
 <body>
@@ -228,8 +231,8 @@
     </button>
   </div>
 
-  <div style="padding:0 0 20px; width:100%">
-    <div class="app-title">CircleTimer</div>
+  <div class="app-header">
+    <div class="app-title">Ryng</div>
     <div class="app-subtitle" data-i18n="subtitle">Zirkeltraining · Timer</div>
   </div>
 
@@ -322,7 +325,7 @@
 
 <!-- ── CONFIRM STOP MODAL ── -->
 <div class="modal-overlay" id="confirm-modal" onclick="closeConfirmModal(event)">
-  <div class="modal" id="confirm-modal" style="gap:12px">
+  <div class="modal" style="gap:12px">
     <div class="modal-title" data-i18n="confirmTitle">Training beenden?</div>
     <div class="confirm-text" data-i18n="confirmText">Dein Fortschritt geht verloren.</div>
     <div class="modal-btns">
@@ -396,12 +399,12 @@
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15,18 9,12 15,6"/></svg>
     <span data-i18n="back">Zurück</span>
   </button>
-  <div class="info-title">CircleTimer</div>
+  <div class="info-title">Ryng</div>
   <div class="info-sub" data-i18n="infoSubtitle">Über diese App</div>
 
   <div class="info-section">
     <div class="info-section-title" data-i18n="infoIdea">Die Idee</div>
-    <div class="info-text" data-i18n="infoIdeaText">CircleTimer wurde entwickelt für Zirkeltraining — eine Trainingsform bei der mehrere Übungen nacheinander in Runden absolviert werden. Die App visualisiert deine gesamte Einheit als Kreis, damit du jederzeit weißt wo du stehst.</div>
+    <div class="info-text" data-i18n="infoIdeaText">Ryng wurde entwickelt für Zirkeltraining — eine Trainingsform bei der mehrere Übungen nacheinander in Runden absolviert werden. Die App visualisiert deine gesamte Einheit als Kreis, damit du jederzeit weißt wo du stehst.</div>
   </div>
 
   <div class="info-section">
@@ -441,13 +444,45 @@
 </div>
 
 <script>
+// ── CONSTANTS ────────────────────────────────────────────────────────────────
+// All magic numbers live here. Change once, applies everywhere.
+const SVG = {
+  CX: 100, CY: 100, R: 82,
+  STROKE_WIDTH: 16,
+  GAP_DEG: 2.5,
+  get CIRC(){ return 2 * Math.PI * this.R; }
+};
+// Single source of truth for phase colors — CSS vars work in SVG too.
+const PHASE_COLORS = {
+  work:       'var(--accent-work)',
+  pause:      'var(--accent-pause)',
+  roundPause: 'var(--accent-round)',
+};
+// Base frequencies — named by musical role, not context.
+// Identical values are intentional: same pitch = same semantic weight.
+const FREQ = { low: 330, mid: 440, high: 660, higher: 880, highest: 1100 };
+const BEEP = {
+  warningWork:  FREQ.high,    // countdown blink during work
+  warningPause: FREQ.mid,     // countdown blink during pause
+  phaseEnd:     FREQ.mid,     // station → pause transition
+  stationStart: FREQ.higher,  // pause → station transition
+  roundEnd:     FREQ.low,     // last station → round pause
+  roundStart1:  FREQ.higher,  // round pause → new round (first tone)
+  roundStart2:  FREQ.highest, // round pause → new round (second tone)
+  skip:         FREQ.high,    // skip forward
+  skipBack:     FREQ.mid,     // skip backward
+  finish1: FREQ.high, finish2: FREQ.higher, finish3: FREQ.highest,
+};
+const TICK_INTERVAL_MS  = 250;  // how often we poll — not the timer precision
+const WARNING_THRESHOLD = 3;    // seconds before phase end to blink+beep
+
 // ── I18N ────────────────────────────────────────────────────────────────────
 const LANGS = ['de','en','es'];
 let currentLang = 'de';
 
 const T = {
   de: {
-    subtitle:'Zirkeltraining · Timer', noPresets:'Keine Presets gespeichert',
+    subtitle:'Circuit Training · Timer', noPresets:'Keine Presets gespeichert',
     saveBtn:'＋ Speichern', saveTitle:'Preset speichern', presetPlaceholder:'Name (z.B. Morgen-Workout)',
     cancel:'Abbrechen', save:'Speichern', structure:'Struktur', rounds:'Runden',
     roundsSub:'Wie viele Runden?', stations:'Stationen', stationsSub:'Übungen pro Runde',
@@ -458,7 +493,7 @@ const T = {
     pauseBtn:'PAUSE', resumeBtn:'WEITER', stopBtn:'STOP', done:'Fertig!',
     doneSub:'Exercise abgeschlossen', minutes:'Minuten', again:'↺  NOCHMAL',
     infoSubtitle:'Über diese App', infoIdea:'Die Idee',
-    infoIdeaText:'CircleTimer wurde entwickelt für Zirkeltraining — eine Trainingsform bei der mehrere Übungen nacheinander in Runden absolviert werden. Die App visualisiert deine gesamte Einheit als Kreis, damit du jederzeit weißt wo du stehst.',
+    infoIdeaText:'Ryng wurde entwickelt für Zirkeltraining — eine Trainingsform bei der mehrere Übungen nacheinander in Runden absolviert werden. Die App visualisiert deine gesamte Einheit als Kreis, damit du jederzeit weißt wo du stehst.',
     infoFeatures:'Funktionen',
     feat1Title:'Kreis-Visualisierung', feat1Text:'Der Ring zeigt deine gesamte Runde — grün für Ausführungszeit, orange für Pausen.',
     feat2Title:'Flexible Konfiguration', feat2Text:'Stelle Runden, Stationen, Ausführungszeit, Pause und Rundenpause frei ein.',
@@ -467,7 +502,7 @@ const T = {
     feat5Title:'Akustische Signale', feat5Text:'Töne und blinkender Countdown in den letzten 3 Sekunden.',
     feat6Title:'Navigation', feat6Text:'Springe jederzeit zur nächsten oder vorherigen Station.',
     infoTip:'Tipp', infoTipText:'Füge diese Seite in Safari zum Home-Bildschirm hinzu: Teilen → "Zum Home-Bildschirm".',
-    AUSFUHRUNG:'AUSFÜHRUNG', PAUSE:'PAUSE', RUNDENPAUSE:'RUNDENPAUSE',
+    phaseWork:'AUSFÜHRUNG', phasePause:'PAUSE', phaseRoundPause:'RUNDENPAUSE',
     totalTime:'Gesamtdauer', confirmTitle:'Training beenden?', confirmText:'Dein Fortschritt geht verloren.',
     confirmCancel:'Weiter trainieren', confirmStop:'Beenden', deleteConfirm:'Preset löschen?',
   },
@@ -483,7 +518,7 @@ const T = {
     pauseBtn:'PAUSE', resumeBtn:'RESUME', stopBtn:'STOP', done:'Done!',
     doneSub:'Exercise complete', minutes:'Minutes', again:'↺  AGAIN',
     infoSubtitle:'About this app', infoIdea:'The Idea',
-    infoIdeaText:'CircleTimer was built for circuit training — a workout format where multiple exercises are performed back-to-back in rounds. The app visualises your entire session as a circle so you always know where you stand.',
+    infoIdeaText:'Ryng was built for circuit training — a workout format where multiple exercises are performed back-to-back in rounds. The app visualises your entire session as a circle so you always know where you stand.',
     infoFeatures:'Features',
     feat1Title:'Circle Visualisation', feat1Text:'The ring shows your entire round — green for work time, orange for rest.',
     feat2Title:'Flexible Configuration', feat2Text:'Set rounds, stations, work time, rest and round rest freely.',
@@ -492,7 +527,7 @@ const T = {
     feat5Title:'Audio Signals', feat5Text:'Sounds and a blinking countdown in the last 3 seconds warn you of phase changes.',
     feat6Title:'Navigation', feat6Text:'Skip to the next or previous station at any time.',
     infoTip:'Tip', infoTipText:'Add this page to your Home Screen in Safari: Share → "Add to Home Screen".',
-    AUSFUHRUNG:'WORK', PAUSE:'REST', RUNDENPAUSE:'ROUND REST',
+    phaseWork:'WORK', phasePause:'REST', phaseRoundPause:'ROUND REST',
     totalTime:'Total Duration', confirmTitle:'End workout?', confirmText:'Your progress will be lost.',
     confirmCancel:'Keep going', confirmStop:'End', deleteConfirm:'Delete preset?',
   },
@@ -508,7 +543,7 @@ const T = {
     pauseBtn:'PAUSA', resumeBtn:'CONTINUAR', stopBtn:'STOP', done:'¡Listo!',
     doneSub:'Ejercicio completado', minutes:'Minutos', again:'↺  DE NUEVO',
     infoSubtitle:'Sobre esta app', infoIdea:'La Idea',
-    infoIdeaText:'CircleTimer fue creado para el entrenamiento en circuito — un formato de entrenamiento donde se realizan múltiples ejercicios consecutivos en rondas. La app visualiza tu sesión completa como un círculo.',
+    infoIdeaText:'Ryng fue creado para el entrenamiento en circuito — un formato de entrenamiento donde se realizan múltiples ejercicios consecutivos en rondas. La app visualiza tu sesión completa como un círculo.',
     infoFeatures:'Funciones',
     feat1Title:'Visualización en Círculo', feat1Text:'El anillo muestra tu ronda completa — verde para ejecución, naranja para pausas.',
     feat2Title:'Configuración Flexible', feat2Text:'Ajusta rondas, estaciones, tiempo de ejecución, pausa y pausa de ronda.',
@@ -517,7 +552,7 @@ const T = {
     feat5Title:'Señales Acústicas', feat5Text:'Sonidos y cuenta atrás parpadeante en los últimos 3 segundos.',
     feat6Title:'Navegación', feat6Text:'Salta a la siguiente o anterior estación en cualquier momento.',
     infoTip:'Consejo', infoTipText:'Añade esta página a la pantalla de inicio en Safari: Compartir → "Añadir a pantalla de inicio".',
-    AUSFUHRUNG:'EJECUCIÓN', PAUSE:'PAUSA', RUNDENPAUSE:'PAUSA RONDA',
+    phaseWork:'EJECUCIÓN', phasePause:'PAUSA', phaseRoundPause:'PAUSA RONDA',
     totalTime:'Duración total', confirmTitle:'¿Terminar entreno?', confirmText:'Tu progreso se perderá.',
     confirmCancel:'Seguir', confirmStop:'Terminar', deleteConfirm:'¿Eliminar preset?',
   }
@@ -535,8 +570,7 @@ function applyLang(){
     if (T[currentLang][key] !== undefined) el.placeholder = T[currentLang][key];
   });
   // Update pause button state
-  const pb = document.getElementById('pause-btn');
-  if (pb) pb.textContent = isPaused ? t('resumeBtn') : t('pauseBtn');
+  if (DOM.pauseBtn) DOM.pauseBtn.textContent = state.isPaused ? t('resumeBtn') : t('pauseBtn');
   // Refresh station inputs placeholders
   document.querySelectorAll('.station-name-input').forEach((inp,i) => {
     inp.placeholder = `${t('station')} ${i+1}`;
@@ -556,20 +590,50 @@ function cycleLang(){
 // ── CONFIG STATE ─────────────────────────────────────────────────────────────
 const cfg = { rounds:3, stations:6, work:40, pause:20, roundPause:60 };
 const limits = { rounds:[1,20], stations:[1,20], work:[5,300], pause:[5,300], roundPause:[5,300] };
+// stationNames is always kept in sync with cfg.stations via renderStationInputs().
+// Access as stationNames[0..cfg.stations-1] — never beyond.
 let stationNames = [];
 
-// ── TIMER STATE ───────────────────────────────────────────────────────────────
-let timer = null;
-let isPaused = false;
-let currentSec = 0;
-let currentPhase = 'work';
-let currentRound = 1;
-let currentStation = 1;
-let startTime = null;
+// ── TIMER STATE (single object — no loose globals) ────────────────────────────
+// All mutable timer state lives here. Functions read/write only via `state`.
+const state = {
+  timer: null,          // setInterval handle
+  isPaused: false,
+  phase: 'work',        // 'work' | 'pause' | 'roundPause'
+  round: 1,
+  station: 1,
+  phaseStartTime: null, // Date.now() when current phase began — source of truth for time
+  phaseDuration: 0,     // total seconds of current phase
+  currentSec: 0,        // derived display value, recalculated each tick
+  exerciseStartTime: null,
+  // SVG segment node references — cached on buildCircleSVG, reused every tick.
+  // Each entry: { type, dur, bg: Element, fg: Element }
+  segs: [],
+};
+
 let audioCtx = null;
+
+// ── DOM CACHE ─────────────────────────────────────────────────────────────────
+// Queried once — never inside a loop or recurring tick function.
+const DOM = {};
+function cacheDOM(){
+  DOM.countdown      = document.getElementById('countdown');
+  DOM.roundDisplay   = document.getElementById('round-display');
+  DOM.stationDisplay = document.getElementById('station-display');
+  DOM.phaseLabel     = document.getElementById('phase-label');
+  DOM.stationName    = document.getElementById('station-name-display');
+  DOM.pauseBtn       = document.getElementById('pause-btn');
+  DOM.totalTime      = document.getElementById('total-time-display');
+  DOM.confirmModal   = document.getElementById('confirm-modal');
+  DOM.doneRounds     = document.getElementById('done-rounds');
+  DOM.doneStations   = document.getElementById('done-stations');
+  DOM.doneTime       = document.getElementById('done-time');
+  DOM.screens        = Array.from(document.querySelectorAll('.screen'));
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+  cacheDOM();
   renderStationInputs();
   renderPresets();
   applyLang();
@@ -598,8 +662,7 @@ function calcTotalTime(){
   const totalSec = cfg.rounds * roundTime + (cfg.rounds - 1) * cfg.roundPause;
   const mins = Math.floor(totalSec / 60);
   const secs = totalSec % 60;
-  const el = document.getElementById('total-time-display');
-  if (el) el.textContent = secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+  if (DOM.totalTime) DOM.totalTime.textContent = secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
 }
 
 function change(key, delta){
@@ -693,18 +756,15 @@ function deletePreset(index,e){
 }
 
 // ── SVG CIRCLE ────────────────────────────────────────────────────────────────
-const CX=100, CY=100, R=82;
-const CIRC = 2*Math.PI*R;
-const GAP_DEG = 2.5;
 
 function buildCircleSVG(){
   const svg = document.getElementById('timer-svg');
   svg.innerHTML = '';
 
   const bgCircle = document.createElementNS('http://www.w3.org/2000/svg','circle');
-  bgCircle.setAttribute('cx',CX); bgCircle.setAttribute('cy',CY); bgCircle.setAttribute('r',R);
+  bgCircle.setAttribute('cx',SVG.CX); bgCircle.setAttribute('cy',SVG.CY); bgCircle.setAttribute('r',SVG.R);
   bgCircle.setAttribute('fill','none'); bgCircle.setAttribute('stroke','var(--surface2)');
-  bgCircle.setAttribute('stroke-width','16');
+  bgCircle.setAttribute('stroke-width', SVG.STROKE_WIDTH);
   svg.appendChild(bgCircle);
 
   const segs = [];
@@ -713,8 +773,8 @@ function buildCircleSVG(){
     if (s < cfg.stations-1) segs.push({ type:'pause', dur:cfg.pause });
   }
   const roundDur = segs.reduce((a,s)=>a+s.dur,0);
-  const totalDeg = 360 - segs.length * GAP_DEG;
-  const colors = { work:'#00e5a0', pause:'#ff6b35', roundPause:'#6c8bff' };
+  const totalDeg = 360 - segs.length * SVG.GAP_DEG;
+  state.segs = []; // will be populated with node refs below
   let angleSoFar = -90;
 
   segs.forEach((seg,idx) => {
@@ -724,8 +784,8 @@ function buildCircleSVG(){
 
     const bgPath = document.createElementNS('http://www.w3.org/2000/svg','path');
     bgPath.setAttribute('fill','none');
-    bgPath.setAttribute('stroke', colors[seg.type]);
-    bgPath.setAttribute('stroke-width','16');
+    bgPath.setAttribute('stroke', PHASE_COLORS[seg.type]);
+    bgPath.setAttribute('stroke-width', SVG.STROKE_WIDTH);
     bgPath.setAttribute('stroke-linecap','butt');
     bgPath.setAttribute('id',`seg-bg-${idx}`);
     bgPath.style.opacity = '0.2';
@@ -735,66 +795,60 @@ function buildCircleSVG(){
 
     const fgPath = document.createElementNS('http://www.w3.org/2000/svg','path');
     fgPath.setAttribute('fill','none');
-    fgPath.setAttribute('stroke', colors[seg.type]);
-    fgPath.setAttribute('stroke-width','16');
+    fgPath.setAttribute('stroke', PHASE_COLORS[seg.type]);
+    fgPath.setAttribute('stroke-width', SVG.STROKE_WIDTH);
     fgPath.setAttribute('stroke-linecap','butt');
     fgPath.setAttribute('id',`seg-fg-${idx}`);
     fgPath.style.opacity = '0';
     fgPath.style.transition = 'opacity 0.3s ease';
     fgPath.setAttribute('d', arcPathCCW(startAngle, endAngle));
     fgPath.setAttribute('pathLength','1');
-    fgPath.style.strokeDasharray = '1 999';
+    fgPath.style.strokeDasharray = `1 ${SVG.CIRC}`;
     fgPath.style.strokeDashoffset = '0';
     svg.appendChild(fgPath);
 
-    angleSoFar = endAngle + GAP_DEG;
-  });
+    // Cache node references so updateCircle/resetCircleOpacities never query the DOM
+    state.segs.push({ ...seg, bg: bgPath, fg: fgPath });
 
-  return segs;
+    angleSoFar = endAngle + SVG.GAP_DEG;
+  });
 }
 
 function arcPath(startDeg, endDeg){
+  const {CX,CY,R} = SVG;
   const s = startDeg*Math.PI/180, e = endDeg*Math.PI/180;
   const x1=CX+R*Math.cos(s), y1=CY+R*Math.sin(s);
   const x2=CX+R*Math.cos(e), y2=CY+R*Math.sin(e);
   return `M ${x1} ${y1} A ${R} ${R} 0 ${endDeg-startDeg>180?1:0} 1 ${x2} ${y2}`;
 }
 function arcPathCCW(startDeg, endDeg){
+  const {CX,CY,R} = SVG;
   const s = startDeg*Math.PI/180, e = endDeg*Math.PI/180;
   const x1=CX+R*Math.cos(e), y1=CY+R*Math.sin(e);
   const x2=CX+R*Math.cos(s), y2=CY+R*Math.sin(s);
   return `M ${x1} ${y1} A ${R} ${R} 0 ${endDeg-startDeg>180?1:0} 0 ${x2} ${y2}`;
 }
 
-let svgSegs = [];
-
 function updateCircle(){
-  const activeSegIdx = currentPhase==='work' ? (currentStation-1)*2 : (currentStation-1)*2+1;
-  const totalPhase = currentPhase==='work' ? cfg.work : currentPhase==='pause' ? cfg.pause : cfg.roundPause;
-  const elapsed = 1 - (currentSec/totalPhase);
+  const { phase, station, currentSec, segs } = state;
+  const activeIdx = phase === 'work' ? (station-1)*2 : (station-1)*2+1;
+  const elapsed   = 1 - (currentSec / getPhaseDur());
 
-  if (currentPhase==='roundPause'){
-    svgSegs.forEach((_,idx)=>{
-      const bg=document.getElementById(`seg-bg-${idx}`);
-      const fg=document.getElementById(`seg-fg-${idx}`);
-      if (bg) bg.style.opacity='0.2';
-      if (fg) fg.style.opacity='0';
-    });
-    return;
-  }
-
-  svgSegs.forEach((seg,idx)=>{
-    const bg=document.getElementById(`seg-bg-${idx}`);
-    const fg=document.getElementById(`seg-fg-${idx}`);
-    if (!bg||!fg) return;
-    if (idx < activeSegIdx){
-      bg.style.opacity='0.6'; fg.style.opacity='0';
-    } else if (idx===activeSegIdx){
-      bg.style.opacity='0.2'; fg.style.opacity='1';
+  segs.forEach(({ bg, fg }, idx) => {
+    if (phase === 'roundPause'){
+      bg.style.opacity = '0.2';
+      fg.style.opacity = '0';
+    } else if (idx < activeIdx){
+      bg.style.opacity = '0.6';
+      fg.style.opacity = '0';
+    } else if (idx === activeIdx){
+      bg.style.opacity = '0.2';
+      fg.style.opacity = '1';
       fg.style.strokeDashoffset = elapsed.toFixed(4);
-      fg.style.transition='stroke-dashoffset 0.9s linear, opacity 0.3s ease';
+      fg.style.transition = 'stroke-dashoffset 0.9s linear, opacity 0.3s ease';
     } else {
-      bg.style.opacity='0.2'; fg.style.opacity='0';
+      bg.style.opacity = '0.2';
+      fg.style.opacity = '0';
     }
   });
 }
@@ -802,97 +856,159 @@ function updateCircle(){
 // ── TIMER LOGIC ───────────────────────────────────────────────────────────────
 function startExercise(){
   try { getAudio(); } catch(e){}
-  currentRound=1; currentStation=1; currentPhase='work';
-  currentSec=cfg.work; isPaused=false; startTime=Date.now();
-  svgSegs=buildCircleSVG();
+  // Freeze cfg for the duration — prevents accidental mutation corrupting getPhaseDur()
+  Object.freeze(cfg);
+  state.round = 1;
+  state.station = 1;
+  state.phase = 'work';
+  state.isPaused = false;
+  state.exerciseStartTime = Date.now();
+  startPhase('work');
+  buildCircleSVG();
   showScreen('timer-screen');
   updateDisplay(); updateCircle();
   requestWakeLock();
-  timer=setInterval(tick,1000);
+  // Tick every 250ms for smooth display — time is derived from Date.now(), not counted
+  state.timer = setInterval(tick, TICK_INTERVAL_MS);
+}
+
+// Begin a new phase: record start time and duration
+function startPhase(phase){
+  state.phase = phase;
+  state.phaseDuration = getPhaseDur();
+  state.phaseStartTime = Date.now();
+  state.currentSec = state.phaseDuration;
 }
 
 function tick(){
-  if (isPaused) return;
-  currentSec--;
-  const countdown=document.getElementById('countdown');
-  if (currentSec<=3 && currentSec>0){
-    countdown.classList.add('blink');
-    beep(currentPhase==='work'?660:440, 0.1, 0.4);
+  if (state.isPaused) return;
+  try {
+
+  // Derive remaining seconds from wall clock — immune to timer drift
+  const elapsed = (Date.now() - state.phaseStartTime) / 1000;
+  const remaining = Math.ceil(state.phaseDuration - elapsed);
+  state.currentSec = Math.max(0, remaining);
+
+  if (state.currentSec <= WARNING_THRESHOLD && state.currentSec > 0){
+    DOM.countdown.classList.add('blink');
+    if (state.currentSec !== state._lastBeepSec){
+      state._lastBeepSec = state.currentSec;
+      beep(state.phase === 'work' ? BEEP.warningWork : BEEP.warningPause, 0.1, 0.4);
+    }
   } else {
-    countdown.classList.remove('blink');
+    DOM.countdown.classList.remove('blink');
   }
-  if (currentSec<=0){ countdown.classList.remove('blink'); advance(); }
-  else { updateDisplay(); updateCircle(); }
+
+  if (state.currentSec <= 0){
+    DOM.countdown.classList.remove('blink');
+    advance();
+  } else {
+    safeRun(updateDisplay, "updateDisplay"); safeRun(updateCircle, "updateCircle");
+  }
+  } catch(e){ console.error("tick error:", e); }
 }
 
+// Advance is decomposed: each phase transition has its own named function.
+// This makes the flow easy to follow and each case independently testable.
 function advance(){
-  if (currentPhase==='work'){
-    if (currentStation < cfg.stations){
-      currentPhase='pause'; currentSec=cfg.pause;
-      beep(440,0.2,0.5);
-    } else {
-      if (currentRound < cfg.rounds){
-        currentPhase='roundPause'; currentSec=cfg.roundPause;
-        beep(330,0.4,0.6);
-      } else {
-        finishExercise(); return;
-      }
-    }
-  } else if (currentPhase==='pause'){
-    currentStation++; currentPhase='work'; currentSec=cfg.work;
-    beep(880,0.15,0.5);
-  } else if (currentPhase==='roundPause'){
-    currentRound++; currentStation=1; currentPhase='work'; currentSec=cfg.work;
-    svgSegs=buildCircleSVG();
-    beep(880,0.15); setTimeout(()=>beep(1100,0.25),150);
+  const transitions = {
+    work:       advanceFromWork,
+    pause:      advanceFromPause,
+    roundPause: advanceFromRoundPause,
+  };
+  const fn = transitions[state.phase];
+  if (fn) fn();
+  safeRun(updateDisplay, "updateDisplay"); safeRun(updateCircle, "updateCircle");
+}
+
+function advanceFromWork(){
+  if (state.station < cfg.stations){
+    startPhase('pause');
+    beep(BEEP.phaseEnd, 0.2, 0.5);
+  } else if (state.round < cfg.rounds){
+    startPhase('roundPause');
+    beep(BEEP.roundEnd, 0.4, 0.6);
+  } else {
+    finishExercise();
   }
-  updateDisplay(); updateCircle();
+}
+
+function advanceFromPause(){
+  state.station++;
+  startPhase('work');
+  beep(BEEP.stationStart, 0.15, 0.5);
+}
+
+function advanceFromRoundPause(){
+  state.round++;
+  state.station = 1;
+  startPhase('work');
+  resetCircleOpacities(); // reuse existing SVG — no rebuild needed
+  beep(BEEP.roundStart1, 0.15);
+  setTimeout(() => beep(BEEP.roundStart2, 0.25), 150);
+}
+
+// Reset all segment opacities to "upcoming" state using cached node refs.
+function resetCircleOpacities(){
+  state.segs.forEach(({ bg, fg }) => {
+    bg.style.opacity = '0.2';
+    fg.style.opacity = '0';
+    fg.style.strokeDashoffset = '0';
+  });
 }
 
 function skipForward(){
-  beep(660,0.08,0.3);
-  if (!isPaused){ currentSec=0; advance(); }
+  beep(BEEP.skip, 0.08, 0.3);
+  if (!state.isPaused){ state.currentSec = 0; advance(); }
+  // advance() already calls safeRun(updateDisplay/updateCircle) internally
 }
 function skipBack(){
-  beep(440,0.08,0.3);
-  if (currentSec >= (getPhaseDur()-2)){
-    if (currentPhase==='pause'){ currentPhase='work'; currentSec=cfg.work; }
-    else if (currentPhase==='work'){
-      if (currentStation>1){ currentStation--; currentPhase='pause'; currentSec=cfg.pause; }
-      else if (currentRound>1){ currentRound--; currentStation=cfg.stations; currentPhase='work'; currentSec=cfg.work; svgSegs=buildCircleSVG(); }
-      else { currentSec=cfg.work; }
-    } else if (currentPhase==='roundPause'){ currentPhase='work'; currentStation=cfg.stations; currentSec=cfg.work; }
+  beep(BEEP.skipBack, 0.08, 0.3);
+  if (state.currentSec >= (getPhaseDur() - 2)){
+    if (state.phase === 'pause'){
+      startPhase('work');
+    } else if (state.phase === 'work'){
+      if (state.station > 1){ state.station--; startPhase('pause'); }
+      else if (state.round > 1){ state.round--; state.station = cfg.stations; startPhase('work'); resetCircleOpacities(); }
+      else { startPhase('work'); }
+    } else if (state.phase === 'roundPause'){
+      state.station = cfg.stations; startPhase('work');
+    }
   } else {
-    currentSec=getPhaseDur();
+    startPhase(state.phase); // restart current phase from beginning
   }
-  updateDisplay(); updateCircle();
+  safeRun(updateDisplay, 'updateDisplay');
+  safeRun(updateCircle, 'updateCircle');
 }
-function getPhaseDur(){ return currentPhase==='work'?cfg.work:currentPhase==='pause'?cfg.pause:cfg.roundPause; }
+function getPhaseDur(){
+  return state.phase === 'work' ? cfg.work : state.phase === 'pause' ? cfg.pause : cfg.roundPause;
+}
 
 // ── DISPLAY ───────────────────────────────────────────────────────────────────
+function safeRun(fn, label){
+  try { fn(); } catch(e){ console.error(`Ryng error in ${label}:`, e); }
+}
+
 function updateDisplay(){
-  document.getElementById('countdown').textContent = currentSec;
-  document.getElementById('round-display').textContent = `${currentRound} / ${cfg.rounds}`;
-  document.getElementById('station-display').textContent =
-    currentPhase==='roundPause' ? `— / ${cfg.stations}` : `${currentStation} / ${cfg.stations}`;
+  const { phase, round, station, currentSec } = state;
 
-  const colors = { work:'var(--accent-work)', pause:'var(--accent-pause)', roundPause:'var(--accent-round)' };
-  document.getElementById('countdown').style.color = colors[currentPhase];
+  DOM.countdown.textContent    = currentSec;
+  DOM.countdown.style.color    = PHASE_COLORS[phase];
+  DOM.roundDisplay.textContent = `${round} / ${cfg.rounds}`;
+  DOM.stationDisplay.textContent =
+    phase === 'roundPause' ? `— / ${cfg.stations}` : `${station} / ${cfg.stations}`;
+  DOM.stationName.textContent  = '';
 
-  const phaseEl = document.getElementById('phase-label');
-  document.getElementById('station-name-display').textContent = '';
-
-  if (currentPhase==='work'){
-    const name = stationNames[currentStation-1];
-    phaseEl.textContent = name || t('AUSFUHRUNG');
-    phaseEl.style.color = colors['work'];
-  } else if (currentPhase==='pause'){
-    const nextName = stationNames[currentStation];
-    phaseEl.textContent = nextName || t('PAUSE');
-    phaseEl.style.color = colors['pause'];
+  // Phase label: show station name if available, else fall back to phase key
+  if (phase === 'work'){
+    DOM.phaseLabel.textContent = (stationNames[station - 1] || '').trim() || t('phaseWork');
+    DOM.phaseLabel.style.color = PHASE_COLORS['work'];
+  } else if (phase === 'pause'){
+    DOM.phaseLabel.textContent = (stationNames[station] || '').trim() || t('phasePause');
+    DOM.phaseLabel.style.color = PHASE_COLORS['pause'];
   } else {
-    phaseEl.textContent = t('RUNDENPAUSE');
-    phaseEl.style.color = colors['roundPause'];
+    DOM.phaseLabel.textContent = t('phaseRoundPause');
+    DOM.phaseLabel.style.color = PHASE_COLORS['roundPause'];
   }
 }
 
@@ -910,47 +1026,58 @@ function releaseWakeLock(){
 }
 // Re-acquire on visibility change (iOS releases it when tab hides)
 document.addEventListener('visibilitychange', ()=>{
-  if (document.visibilityState === 'visible' && timer && !isPaused) requestWakeLock();
+  if (document.visibilityState === 'visible' && state.timer && !state.isPaused) requestWakeLock();
 });
 
 // ── CONFIRM STOP ──────────────────────────────────────────────────────────────
 function openConfirmModal(){
-  isPaused = true;
-  document.getElementById('pause-btn').textContent = t('resumeBtn');
-  document.getElementById('confirm-modal').classList.add('open');
+  state.isPaused = true;
+  DOM.pauseBtn.textContent = t('resumeBtn');
+  DOM.confirmModal.classList.add('open');
 }
 function closeConfirmModal(e){
-  if (e && e.target !== document.getElementById('confirm-modal')) return;
-  document.getElementById('confirm-modal').classList.remove('open');
-  isPaused = false;
-  document.getElementById('pause-btn').textContent = t('pauseBtn');
+  if (e && e.target !== DOM.confirmModal) return;
+  DOM.confirmModal.classList.remove('open');
+  state.isPaused = false;
+  // Restore phaseStartTime so time continues correctly after dismiss
+  state.phaseStartTime = Date.now() - (state.phaseDuration - state.currentSec) * 1000;
+  DOM.pauseBtn.textContent = t('pauseBtn');
 }
 function confirmStop(){
-  document.getElementById('confirm-modal').classList.remove('open');
+  DOM.confirmModal.classList.remove('open');
   releaseWakeLock();
-  clearInterval(timer); timer = null;
+  clearInterval(state.timer); state.timer = null;
   resetToConfig();
 }
 
 function togglePause(){
-  isPaused = !isPaused;
-  document.getElementById('pause-btn').textContent = isPaused ? t('resumeBtn') : t('pauseBtn');
+  state.isPaused = !state.isPaused;
+  if (!state.isPaused){
+    // Resuming: shift phaseStartTime forward by the paused duration
+    // so the remaining time is preserved correctly
+    state.phaseStartTime = Date.now() - (state.phaseDuration - state.currentSec) * 1000;
+  }
+  DOM.pauseBtn.textContent = state.isPaused ? t('resumeBtn') : t('pauseBtn');
 }
-function stopExercise(){ clearInterval(timer); timer=null; resetToConfig(); }
 function finishExercise(){
-  clearInterval(timer); timer=null;
-  const elapsed = Math.round((Date.now()-startTime)/1000);
+  clearInterval(state.timer); state.timer=null;
+  const elapsed = Math.round((Date.now()-state.exerciseStartTime)/1000);
   const mins = Math.round(elapsed/60);
-  document.getElementById('done-rounds').textContent = cfg.rounds;
-  document.getElementById('done-stations').textContent = cfg.rounds*cfg.stations;
-  document.getElementById('done-time').textContent = mins;
+  DOM.doneRounds.textContent    = cfg.rounds;
+  DOM.doneStations.textContent  = cfg.rounds * cfg.stations;
+  DOM.doneTime.textContent      = mins;
   releaseWakeLock();
-  beep(660,0.15); setTimeout(()=>beep(880,0.15),200); setTimeout(()=>beep(1100,0.3),400);
+  beep(BEEP.finish1,0.15); setTimeout(()=>beep(BEEP.finish2,0.15),200); setTimeout(()=>beep(BEEP.finish3,0.3),400);
   showScreen('done-screen');
 }
-function resetToConfig(){ if(timer){clearInterval(timer);timer=null;} showScreen('config-screen'); }
+function resetToConfig(){
+  if (state.timer){ clearInterval(state.timer); state.timer = null; }
+  // Unfreeze cfg so config screen can modify it again
+  Object.assign(cfg, cfg);  // creates a new unfrozen copy in place
+  showScreen('config-screen');
+}
 function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  DOM.screens.forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
 </script>
