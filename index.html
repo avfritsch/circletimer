@@ -10,8 +10,9 @@
 <style>
   :root {
     --bg:#0a0a0f; --surface:#13131a; --surface2:#1c1c27;
-    --accent-work:#00e5a0; --accent-pause:#ff6b35; --accent-round:#6c8bff;
+    --accent-work:#00e5a0; --accent-work-dark:#00b87a; --accent-pause:#ff6b35; --accent-round:#6c8bff;
     --text:#f0f0f8; --text-dim:#6b6b80; --border:#2a2a3a;
+    --color-danger:#ff5555;
   }
   *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body{
@@ -108,6 +109,19 @@
   .dot-work{ background:var(--accent-work); }
   .dot-pause{ background:var(--accent-pause); }
   .dot-round{ background:var(--accent-round); }
+
+  /* ── TOTAL TIME BOX (config screen) ── */
+  .total-time-box{
+    width:100%; display:flex; justify-content:space-between; align-items:center;
+    padding:16px 24px; margin-top:16px;
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+  }
+  .total-time-label{ font-size:13px; color:var(--text-dim); letter-spacing:1px; }
+  .total-time-value{
+    font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:2px;
+    background:linear-gradient(135deg,var(--accent-work),var(--accent-round));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
 
   .start-btn{
     margin-top:16px; margin-bottom:16px; width:100%; padding:20px;
@@ -219,11 +233,8 @@
   /* confirm modal */
   #confirm-modal .modal{ gap:12px; }
   .confirm-text{ font-size:15px; color:var(--text-dim); line-height:1.5; }
-  /* app header */
-  .app-header{ padding:0 0 20px; width:100%; }
   /* danger action */
   .modal-danger{ background:var(--color-danger); color:#fff; }
-  :root{ --color-danger:#ff5555; --accent-work-dark:#00b87a; }
 </style>
 </head>
 <body>
@@ -236,8 +247,8 @@
       <div class="app-subtitle" data-i18n="subtitle">Circuit Training · Timer</div>
     </div>
     <div class="app-header-right">
-      <button class="lang-btn" onclick="cycleLang()" id="lang-toggle">DE</button>
-      <button class="nav-icon-btn" onclick="showScreen('info-screen')" title="Info">
+      <button class="lang-btn" id="lang-toggle">DE</button>
+      <button class="nav-icon-btn" id="info-btn" title="Info">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
         </svg>
@@ -250,17 +261,17 @@
     <div class="preset-scroll" id="preset-scroll">
       <div class="no-presets-msg" data-i18n="noPresets">Keine Presets gespeichert</div>
     </div>
-    <button class="save-preset-btn" onclick="openSaveModal()" data-i18n="saveBtn">＋ Speichern</button>
+    <button class="save-preset-btn" id="save-preset-btn" data-i18n="saveBtn">＋ Speichern</button>
   </div>
 
   <!-- Save modal -->
-  <div class="modal-overlay" id="save-modal" onclick="closeSaveModal(event)">
+  <div class="modal-overlay" id="save-modal">
     <div class="modal">
       <div class="modal-title" data-i18n="saveTitle">Preset speichern</div>
       <input type="text" id="preset-name-input" data-i18n-placeholder="presetPlaceholder" placeholder="Name (z.B. Morgen-Workout)" maxlength="30"/>
       <div class="modal-btns">
-        <button class="modal-btn modal-cancel" onclick="closeSaveModal()" data-i18n="cancel">Abbrechen</button>
-        <button class="modal-btn modal-save" onclick="savePreset()" data-i18n="save">Speichern</button>
+        <button class="modal-btn modal-cancel" id="save-cancel-btn" data-i18n="cancel">Abbrechen</button>
+        <button class="modal-btn modal-save" id="save-confirm-btn" data-i18n="save">Speichern</button>
       </div>
     </div>
   </div>
@@ -269,18 +280,18 @@
     <div class="config-card-title" data-i18n="structure">Struktur</div>
     <div class="config-row">
       <div class="config-label"><span data-i18n="rounds">Runden</span><span data-i18n="roundsSub">Wie viele Runden?</span></div>
-      <div class="stepper">
-        <button onclick="change('rounds',-1)">−</button>
+      <div class="stepper" data-cfg="rounds">
+        <button class="stepper-dec">−</button>
         <div class="stepper-value" id="val-rounds">3</div>
-        <button onclick="change('rounds',1)">+</button>
+        <button class="stepper-inc">+</button>
       </div>
     </div>
     <div class="config-row">
       <div class="config-label"><span data-i18n="stations">Stationen</span><span data-i18n="stationsSub">Übungen pro Runde</span></div>
-      <div class="stepper">
-        <button onclick="change('stations',-1)">−</button>
+      <div class="stepper" data-cfg="stations">
+        <button class="stepper-dec">−</button>
         <div class="stepper-value" id="val-stations">6</div>
-        <button onclick="change('stations',1)">+</button>
+        <button class="stepper-inc">+</button>
       </div>
     </div>
   </div>
@@ -289,31 +300,36 @@
     <div class="config-card-title" data-i18n="times">Zeiten</div>
     <div class="config-row">
       <div class="config-label"><span class="label-work" data-i18n="work">Ausführung</span><span data-i18n="workSub">Aktive Zeit pro Station</span></div>
-      <div class="stepper">
-        <button onclick="change('work',-5)">−</button>
+      <div class="stepper" data-cfg="work" data-step="5">
+        <button class="stepper-dec">−</button>
         <div class="stepper-value" id="val-work">40</div>
-        <button onclick="change('work',5)">+</button>
+        <button class="stepper-inc">+</button>
       </div>
     </div>
     <div class="config-row">
       <div class="config-label"><span class="label-pause" data-i18n="pause">Pause</span><span data-i18n="pauseSub">Zwischen Stationen</span></div>
-      <div class="stepper">
-        <button onclick="change('pause',-5)">−</button>
+      <div class="stepper" data-cfg="pause" data-step="5">
+        <button class="stepper-dec">−</button>
         <div class="stepper-value" id="val-pause">20</div>
-        <button onclick="change('pause',5)">+</button>
+        <button class="stepper-inc">+</button>
       </div>
     </div>
     <div class="config-row">
       <div class="config-label"><span class="label-round" data-i18n="roundPause">Rundenpause</span><span data-i18n="roundPauseSub">Zwischen Runden</span></div>
-      <div class="stepper">
-        <button onclick="change('roundPause',-5)">−</button>
+      <div class="stepper" data-cfg="roundPause" data-step="5">
+        <button class="stepper-dec">−</button>
         <div class="stepper-value" id="val-roundPause">60</div>
-        <button onclick="change('roundPause',5)">+</button>
+        <button class="stepper-inc">+</button>
       </div>
     </div>
   </div>
 
-  <button class="start-btn" onclick="startExercise()">
+  <div class="total-time-box" id="config-total-time">
+    <span class="total-time-label" data-i18n="estDuration">Geschätzte Dauer</span>
+    <span class="total-time-value" id="config-total-value">—</span>
+  </div>
+
+  <button class="start-btn" id="start-btn">
     <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
       <polygon points="5,3 19,12 5,21"/>
     </svg>
@@ -327,13 +343,13 @@
 </div>
 
 <!-- ── CONFIRM STOP MODAL ── -->
-<div class="modal-overlay" id="confirm-modal" onclick="closeConfirmModal(event)">
+<div class="modal-overlay" id="confirm-modal">>
   <div class="modal" style="gap:12px">
     <div class="modal-title" data-i18n="confirmTitle">Training beenden?</div>
     <div class="confirm-text" data-i18n="confirmText">Dein Fortschritt geht verloren.</div>
     <div class="modal-btns">
-      <button class="modal-btn modal-cancel" onclick="closeConfirmModal()" data-i18n="confirmCancel">Weiter trainieren</button>
-      <button class="modal-btn" onclick="confirmStop()" style="background:#ff5555;color:#fff" data-i18n="confirmStop">Beenden</button>
+      <button class="modal-btn modal-cancel" id="confirm-cancel-btn" data-i18n="confirmCancel">Weiter trainieren</button>
+      <button class="modal-btn" id="confirm-stop-btn" style="background:#ff5555;color:#fff" data-i18n="confirmStop">Beenden</button>
     </div>
   </div>
 </div>
@@ -366,18 +382,18 @@
 
   <div class="nav-row">
     <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-      <button class="nav-btn" onclick="skipBack()">‹</button>
+      <button class="nav-btn" id="skip-back-btn">‹</button>
       <span class="nav-btn-label" data-i18n="back">ZURÜCK</span>
     </div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-      <button class="nav-btn" onclick="skipForward()">›</button>
+      <button class="nav-btn" id="skip-fwd-btn">›</button>
       <span class="nav-btn-label" data-i18n="forward">WEITER</span>
     </div>
   </div>
 
   <div class="timer-controls">
-    <button class="ctrl-btn" id="pause-btn" onclick="togglePause()" data-i18n="pauseBtn">PAUSE</button>
-    <button class="ctrl-btn" id="stop-btn" onclick="openConfirmModal()" data-i18n="stopBtn">STOP</button>
+    <button class="ctrl-btn" id="pause-btn" data-i18n="pauseBtn">PAUSE</button>
+    <button class="ctrl-btn" id="stop-btn" data-i18n="stopBtn">STOP</button>
   </div>
 </div>
 
@@ -397,12 +413,12 @@
     <div class="stat"><span class="stat-num" id="done-stations">—</span><span class="stat-label" data-i18n="stations">Stationen</span></div>
     <div class="stat"><span class="stat-num" id="done-time">—</span><span class="stat-label" data-i18n="minutes">Minuten</span></div>
   </div>
-  <button class="again-btn" onclick="resetToConfig()" data-i18n="again">↺  NOCHMAL</button>
+  <button class="again-btn" id="again-btn" data-i18n="again">↺  NOCHMAL</button>
 </div>
 
 <!-- ── INFO ── -->
 <div id="info-screen" class="screen">
-  <button class="info-back" onclick="showScreen('config-screen')">
+  <button class="info-back" id="info-back-btn">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15,18 9,12 15,6"/></svg>
     <span data-i18n="back">Zurück</span>
   </button>
@@ -510,7 +526,7 @@ const T = {
     feat6Title:'Navigation', feat6Text:'Springe jederzeit zur nächsten oder vorherigen Station.',
     infoTip:'Tipp', infoTipText:'Füge diese Seite in Safari zum Home-Bildschirm hinzu: Teilen → "Zum Home-Bildschirm".',
     phaseWork:'AUSFÜHRUNG', phasePause:'PAUSE', phaseRoundPause:'RUNDENPAUSE',
-    totalTime:'Gesamtdauer', confirmTitle:'Training beenden?', confirmText:'Dein Fortschritt geht verloren.',
+    totalTime:'Dauer', estDuration:'Geschätzte Dauer', confirmTitle:'Training beenden?', confirmText:'Dein Fortschritt geht verloren.',
     confirmCancel:'Weiter trainieren', confirmStop:'Beenden', deleteConfirm:'Preset löschen?',
   },
   en: {
@@ -535,7 +551,7 @@ const T = {
     feat6Title:'Navigation', feat6Text:'Skip to the next or previous station at any time.',
     infoTip:'Tip', infoTipText:'Add this page to your Home Screen in Safari: Share → "Add to Home Screen".',
     phaseWork:'WORK', phasePause:'REST', phaseRoundPause:'ROUND REST',
-    totalTime:'Total Duration', confirmTitle:'End workout?', confirmText:'Your progress will be lost.',
+    totalTime:'Duration', estDuration:'Estimated Duration', confirmTitle:'End workout?', confirmText:'Your progress will be lost.',
     confirmCancel:'Keep going', confirmStop:'End', deleteConfirm:'Delete preset?',
   },
   es: {
@@ -560,12 +576,24 @@ const T = {
     feat6Title:'Navegación', feat6Text:'Salta a la siguiente o anterior estación en cualquier momento.',
     infoTip:'Consejo', infoTipText:'Añade esta página a la pantalla de inicio en Safari: Compartir → "Añadir a pantalla de inicio".',
     phaseWork:'EJECUCIÓN', phasePause:'PAUSA', phaseRoundPause:'PAUSA RONDA',
-    totalTime:'Duración total', confirmTitle:'¿Terminar entreno?', confirmText:'Tu progreso se perderá.',
+    totalTime:'Duración', estDuration:'Duración estimada', confirmTitle:'¿Terminar entreno?', confirmText:'Tu progreso se perderá.',
     confirmCancel:'Seguir', confirmStop:'Terminar', deleteConfirm:'¿Eliminar preset?',
   }
 };
 
 function t(key){ return (T[currentLang] || T['de'])[key] || key; }
+
+// Punkt 8: Dev-mode translation validation — logs missing keys to console.
+function validateTranslations(){
+  const refKeys = Object.keys(T.de);
+  LANGS.forEach(lang => {
+    if (lang === 'de') return;
+    const missing = refKeys.filter(k => !(k in T[lang]));
+    if (missing.length) console.warn(`Ryng i18n: ${lang} is missing keys:`, missing);
+    const extra = Object.keys(T[lang]).filter(k => !(k in T.de));
+    if (extra.length) console.warn(`Ryng i18n: ${lang} has extra keys:`, extra);
+  });
+}
 
 function applyLang(){
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -583,7 +611,7 @@ function applyLang(){
     inp.placeholder = `${t('station')} ${i+1}`;
   });
   // Update lang toggle to show CURRENT language
-  document.getElementById('lang-toggle').textContent = currentLang.toUpperCase();
+  DOM.langToggle.textContent = currentLang.toUpperCase();
   // Refresh display if timer running
   if (state.timer) safeRun(updateDisplay, "updateDisplay");
 }
@@ -613,9 +641,12 @@ const state = {
   phaseDuration: 0,     // total seconds of current phase
   currentSec: 0,        // derived display value, recalculated each tick
   exerciseStartTime: null,
+  pauseStartTime: null,       // Date.now() when pause began (for elapsed time correction)
   // SVG segment node references — cached on buildCircleSVG, reused every tick.
   // Each entry: { type, dur, bg: Element, fg: Element }
   segs: [],
+  _lastBeepSec: null,   // tracks last beeped second to avoid duplicate warning beeps
+  _audioWarned: false,   // Punkt 7: one-time audio failure flag
 };
 
 let audioCtx = null;
@@ -630,22 +661,72 @@ function cacheDOM(){
   DOM.phaseLabel     = document.getElementById('phase-label');
   DOM.stationName    = document.getElementById('station-name-display');
   DOM.pauseBtn       = document.getElementById('pause-btn');
-  DOM.totalTime      = document.getElementById('total-time-display'); // on timer screen
+  DOM.totalTime      = document.getElementById('total-time-display');
   DOM.confirmModal   = document.getElementById('confirm-modal');
   DOM.doneRounds     = document.getElementById('done-rounds');
   DOM.doneStations   = document.getElementById('done-stations');
   DOM.doneTime       = document.getElementById('done-time');
   DOM.screens        = Array.from(document.querySelectorAll('.screen'));
+  // Additional cached refs (Punkt 3 — avoid repeated getElementById)
+  DOM.timerSvg       = document.getElementById('timer-svg');
+  DOM.presetScroll   = document.getElementById('preset-scroll');
+  DOM.stationInputs  = document.getElementById('station-inputs');
+  DOM.saveModal      = document.getElementById('save-modal');
+  DOM.presetNameInput= document.getElementById('preset-name-input');
+  DOM.langToggle     = document.getElementById('lang-toggle');
+  DOM.configTotalValue = document.getElementById('config-total-value');
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   cacheDOM();
+  bindEvents();
   renderStationInputs();
   renderPresets();
   applyLang();
-  calcTotalTime();
+  calcEstimatedTime();
+  if (typeof validateTranslations === 'function') validateTranslations(); // Punkt 8
 });
+
+// ── EVENT BINDING (Punkt 6) ──────────────────────────────────────────────────
+// All event listeners in one place. No inline onclick in HTML.
+function bindEvents(){
+  // Config screen
+  DOM.langToggle.addEventListener('click', cycleLang);
+  document.getElementById('info-btn').addEventListener('click', () => showScreen('info-screen'));
+  document.getElementById('save-preset-btn').addEventListener('click', openSaveModal);
+  document.getElementById('start-btn').addEventListener('click', startExercise);
+
+  // Save modal
+  DOM.saveModal.addEventListener('click', (e) => { if (e.target === DOM.saveModal) closeSaveModal(); });
+  document.getElementById('save-cancel-btn').addEventListener('click', () => closeSaveModal());
+  document.getElementById('save-confirm-btn').addEventListener('click', savePreset);
+
+  // Steppers — delegated via data-attributes
+  document.querySelectorAll('.stepper').forEach(stepper => {
+    const key = stepper.dataset.cfg;
+    const step = parseInt(stepper.dataset.step || '1', 10);
+    stepper.querySelector('.stepper-dec').addEventListener('click', () => change(key, -step));
+    stepper.querySelector('.stepper-inc').addEventListener('click', () => change(key, step));
+  });
+
+  // Timer screen
+  document.getElementById('skip-back-btn').addEventListener('click', skipBack);
+  document.getElementById('skip-fwd-btn').addEventListener('click', skipForward);
+  DOM.pauseBtn.addEventListener('click', togglePause);
+  document.getElementById('stop-btn').addEventListener('click', openConfirmModal);
+
+  // Confirm modal
+  DOM.confirmModal.addEventListener('click', onConfirmOverlayClick);
+  document.getElementById('confirm-cancel-btn').addEventListener('click', dismissConfirmModal);
+  document.getElementById('confirm-stop-btn').addEventListener('click', confirmStop);
+
+  // Done screen
+  document.getElementById('again-btn').addEventListener('click', resetToConfig);
+
+  // Info screen
+  document.getElementById('info-back-btn').addEventListener('click', () => showScreen('config-screen'));
+}
 
 // ── AUDIO ─────────────────────────────────────────────────────────────────────
 function getAudio(){ if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
@@ -658,21 +739,37 @@ function beep(freq=880, duration=0.12, volume=0.5){
     gain.gain.setValueAtTime(volume, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
     osc.start(ctx.currentTime); osc.stop(ctx.currentTime + duration);
-  } catch(e){}
+  } catch(e){
+    if (!state._audioWarned){
+      state._audioWarned = true;
+      console.warn('Ryng: Audio not available on this device. Beeps disabled.', e);
+    }
+  }
 }
 
 // ── CONFIG UI ─────────────────────────────────────────────────────────────────
-function calcTotalTime(){
-  const el = document.getElementById('total-time-display');
-  if (!el) return;
-  const cfgNow        = state.cfgSnapshot || cfg;
-  const stationsWork  = cfgNow.stations * cfgNow.work;
-  const stationsPause = (cfgNow.stations - 1) * cfgNow.pause;
-  const roundTime     = stationsWork + stationsPause;
-  const totalSec      = cfgNow.rounds * roundTime + (cfgNow.rounds - 1) * cfgNow.roundPause;
+// Format seconds as MM:SS
+function formatElapsed(totalSec){
   const mins = Math.floor(totalSec / 60);
   const secs = totalSec % 60;
-  el.textContent = secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}
+
+// Update the elapsed time display in the timer header (called every tick)
+function updateElapsedTime(){
+  if (!DOM.totalTime || !state.exerciseStartTime) return;
+  const elapsed = Math.floor((Date.now() - state.exerciseStartTime) / 1000);
+  DOM.totalTime.textContent = formatElapsed(elapsed);
+}
+
+// Calculate and display estimated total duration on config screen
+function calcEstimatedTime(){
+  if (!DOM.configTotalValue) return;
+  const stationsWork  = cfg.stations * cfg.work;
+  const stationsPause = (cfg.stations - 1) * cfg.pause;
+  const roundTime     = stationsWork + stationsPause;
+  const totalSec      = cfg.rounds * roundTime + (cfg.rounds - 1) * cfg.roundPause;
+  DOM.configTotalValue.textContent = formatElapsed(totalSec);
 }
 
 function change(key, delta){
@@ -680,11 +777,11 @@ function change(key, delta){
   cfg[key] = Math.min(max, Math.max(min, cfg[key] + delta));
   document.getElementById('val-'+key).textContent = cfg[key];
   if (key === 'stations') renderStationInputs();
-  calcTotalTime();
+  calcEstimatedTime();
 }
 
 function renderStationInputs(){
-  const container = document.getElementById('station-inputs');
+  const container = DOM.stationInputs;
   const existing = stationNames.slice();
   stationNames = [];
   container.innerHTML = '';
@@ -708,7 +805,7 @@ function savePresetsToStorage(p){ localStorage.setItem('circletimer_presets', JS
 
 function renderPresets(){
   const presets = loadPresetsFromStorage();
-  const scroll = document.getElementById('preset-scroll');
+  const scroll = DOM.presetScroll;
   scroll.innerHTML = '';
   if (presets.length === 0){
     scroll.innerHTML = `<div style="font-size:13px;color:var(--text-dim);padding:8px 0;white-space:nowrap">${t('noPresets')}</div>`;
@@ -717,29 +814,35 @@ function renderPresets(){
   presets.forEach((p,i) => {
     const chip = document.createElement('div');
     chip.className = 'preset-chip';
-    chip.innerHTML = `${p.name}<span class="preset-chip-del" onclick="deletePreset(${i},event)">✕</span>`;
+    // Build chip content with DOM API instead of innerHTML injection (Punkt 6)
+    const nameSpan = document.createTextNode(p.name);
+    chip.appendChild(nameSpan);
+    const delSpan = document.createElement('span');
+    delSpan.className = 'preset-chip-del';
+    delSpan.textContent = '✕';
+    delSpan.addEventListener('click', (e) => { e.stopPropagation(); deletePreset(i); });
+    chip.appendChild(delSpan);
     chip.addEventListener('click', ()=>loadPreset(i));
     scroll.appendChild(chip);
   });
 }
 
 function openSaveModal(){
-  document.getElementById('preset-name-input').value = '';
-  document.getElementById('save-modal').classList.add('open');
-  setTimeout(()=>document.getElementById('preset-name-input').focus(),100);
+  DOM.presetNameInput.value = '';
+  DOM.saveModal.classList.add('open');
+  setTimeout(()=>DOM.presetNameInput.focus(),100);
 }
-function closeSaveModal(e){
-  if (e && e.target !== document.getElementById('save-modal')) return;
-  document.getElementById('save-modal').classList.remove('open');
+function closeSaveModal(){
+  DOM.saveModal.classList.remove('open');
 }
 function savePreset(){
-  const name = document.getElementById('preset-name-input').value.trim();
-  if (!name){ document.getElementById('preset-name-input').focus(); return; }
+  const name = DOM.presetNameInput.value.trim();
+  if (!name){ DOM.presetNameInput.focus(); return; }
   const presets = loadPresetsFromStorage();
   presets.push({ name, cfg:{...cfg}, stationNames:[...stationNames] });
   savePresetsToStorage(presets);
   renderPresets();
-  document.getElementById('save-modal').classList.remove('open');
+  DOM.saveModal.classList.remove('open');
 }
 function loadPreset(index){
   const p = loadPresetsFromStorage()[index];
@@ -754,10 +857,9 @@ function loadPreset(index){
     const inputs = document.querySelectorAll('.station-name-input');
     if (inputs[i]) inputs[i].value = name;
   });
-  calcTotalTime();
+  calcEstimatedTime();
 }
-function deletePreset(index,e){
-  e.stopPropagation();
+function deletePreset(index){
   if (!confirm(t('deleteConfirm'))) return;
   const presets = loadPresetsFromStorage();
   presets.splice(index,1);
@@ -768,7 +870,7 @@ function deletePreset(index,e){
 // ── SVG CIRCLE ────────────────────────────────────────────────────────────────
 
 function buildCircleSVG(){
-  const svg = document.getElementById('timer-svg');
+  const svg = DOM.timerSvg;
   svg.innerHTML = '';
 
   const bgCircle = document.createElementNS('http://www.w3.org/2000/svg','circle');
@@ -842,7 +944,7 @@ function arcPathCCW(startDeg, endDeg){
 function updateCircle(){
   const { phase, station, currentSec, segs } = state;
   const activeIdx = phase === 'work' ? (station-1)*2 : (station-1)*2+1;
-  const elapsed   = 1 - (currentSec / getPhaseDur());
+  const elapsed   = 1 - (currentSec / state.phaseDuration);
 
   segs.forEach(({ bg, fg }, idx) => {
     if (phase === 'roundPause'){
@@ -868,15 +970,13 @@ function startExercise(){
   try { getAudio(); } catch(e){}
   // Snapshot cfg into state as a frozen copy — cfg itself stays mutable for config screen
   state.cfgSnapshot = Object.freeze({ ...cfg });
-  // Reset display then populate with correct duration
-  const totalEl = document.getElementById('total-time-display');
-  if (totalEl) totalEl.textContent = '—';
-  calcTotalTime();
   state.round = 1;
   state.station = 1;
   state.phase = 'work';
   state.isPaused = false;
   state.exerciseStartTime = Date.now();
+  // Init elapsed display at 0:00
+  if (DOM.totalTime) DOM.totalTime.textContent = '0:00';
   startPhase('work');
   buildCircleSVG();
   showScreen('timer-screen');
@@ -889,9 +989,10 @@ function startExercise(){
 // Begin a new phase: record start time and duration
 function startPhase(phase){
   state.phase = phase;
-  state.phaseDuration = getPhaseDur();
+  state.phaseDuration = _durationForPhase(phase);
   state.phaseStartTime = Date.now();
   state.currentSec = state.phaseDuration;
+  state._lastBeepSec = null;  // reset beep tracker on phase change
 }
 
 function tick(){
@@ -919,7 +1020,52 @@ function tick(){
   } else {
     safeRun(updateDisplay, "updateDisplay"); safeRun(updateCircle, "updateCircle");
   }
+  // Always update elapsed stopwatch (even during pause is handled by early return above)
+  safeRun(updateElapsedTime, "updateElapsedTime");
   } catch(e){ console.error("tick error:", e); }
+}
+
+// ── STATE TRANSITIONS (Punkt 1) ──────────────────────────────────────────────
+// Single entry point for state mutations. Validates invariants.
+function transition(action, payload){
+  const c = state.cfgSnapshot || cfg;
+  switch(action){
+    case 'nextStation':
+      state.station++;
+      if (state.station > c.stations) throw new Error(`Invariant: station ${state.station} > ${c.stations}`);
+      break;
+    case 'nextRound':
+      state.round++;
+      state.station = 1;
+      if (state.round > c.rounds) throw new Error(`Invariant: round ${state.round} > ${c.rounds}`);
+      break;
+    case 'prevStation':
+      state.station--;
+      if (state.station < 1) throw new Error(`Invariant: station ${state.station} < 1`);
+      break;
+    case 'prevRound':
+      state.round--;
+      state.station = c.stations;
+      if (state.round < 1) throw new Error(`Invariant: round ${state.round} < 1`);
+      break;
+    case 'setStation':
+      state.station = payload;
+      break;
+    case 'pause':
+      state.isPaused = true;
+      state.pauseStartTime = Date.now();  // track when pause began
+      break;
+    case 'resume':
+      state.isPaused = false;
+      // Shift both phase and exercise start times forward by pause duration
+      const pausedMs = Date.now() - state.pauseStartTime;
+      state.phaseStartTime += pausedMs;
+      state.exerciseStartTime += pausedMs;
+      state.pauseStartTime = null;
+      break;
+    default:
+      throw new Error(`Unknown transition: ${action}`);
+  }
 }
 
 // Advance is decomposed: each phase transition has its own named function.
@@ -949,14 +1095,13 @@ function advanceFromWork(){
 }
 
 function advanceFromPause(){
-  state.station++;
+  transition('nextStation');
   startPhase('work');
   beep(BEEP.stationStart, 0.15, 0.5);
 }
 
 function advanceFromRoundPause(){
-  state.round++;
-  state.station = 1;
+  transition('nextRound');
   startPhase('work');
   resetCircleOpacities(); // reuse existing SVG — no rebuild needed
   beep(BEEP.roundStart1, 0.15);
@@ -979,15 +1124,15 @@ function skipForward(){
 }
 function skipBack(){
   beep(BEEP.skipBack, 0.08, 0.3);
-  if (state.currentSec >= (getPhaseDur() - 2)){
+  if (state.currentSec >= (state.phaseDuration - 2)){
     if (state.phase === 'pause'){
       startPhase('work');
     } else if (state.phase === 'work'){
-      if (state.station > 1){ state.station--; startPhase('pause'); }
-      else if (state.round > 1){ state.round--; state.station = (state.cfgSnapshot||cfg).stations; startPhase('work'); resetCircleOpacities(); }
+      if (state.station > 1){ transition('prevStation'); startPhase('pause'); }
+      else if (state.round > 1){ transition('prevRound'); startPhase('work'); resetCircleOpacities(); }
       else { startPhase('work'); }
     } else if (state.phase === 'roundPause'){
-      state.station = cfg.stations; startPhase('work');
+      transition('setStation', cfg.stations); startPhase('work');
     }
   } else {
     startPhase(state.phase); // restart current phase from beginning
@@ -995,9 +1140,11 @@ function skipBack(){
   safeRun(updateDisplay, 'updateDisplay');
   safeRun(updateCircle, 'updateCircle');
 }
-function getPhaseDur(){
+// Duration lookup — used only by startPhase() to set state.phaseDuration.
+// All other code reads state.phaseDuration directly (single source of truth).
+function _durationForPhase(phase){
   const c = state.cfgSnapshot || cfg;
-  return state.phase === 'work' ? c.work : state.phase === 'pause' ? c.pause : c.roundPause;
+  return phase === 'work' ? c.work : phase === 'pause' ? c.pause : c.roundPause;
 }
 
 // ── DISPLAY ───────────────────────────────────────────────────────────────────
@@ -1047,16 +1194,17 @@ document.addEventListener('visibilitychange', ()=>{
 
 // ── CONFIRM STOP ──────────────────────────────────────────────────────────────
 function openConfirmModal(){
-  state.isPaused = true;
+  transition('pause');
   DOM.pauseBtn.textContent = t('resumeBtn');
   DOM.confirmModal.classList.add('open');
 }
-function closeConfirmModal(e){
-  if (e && e.target !== DOM.confirmModal) return;
+function onConfirmOverlayClick(e){
+  // Only close when clicking the overlay itself, not the modal content
+  if (e.target === DOM.confirmModal) dismissConfirmModal();
+}
+function dismissConfirmModal(){
   DOM.confirmModal.classList.remove('open');
-  state.isPaused = false;
-  // Restore phaseStartTime so time continues correctly after dismiss
-  state.phaseStartTime = Date.now() - (state.phaseDuration - state.currentSec) * 1000;
+  transition('resume');
   DOM.pauseBtn.textContent = t('pauseBtn');
 }
 function confirmStop(){
@@ -1067,11 +1215,10 @@ function confirmStop(){
 }
 
 function togglePause(){
-  state.isPaused = !state.isPaused;
-  if (!state.isPaused){
-    // Resuming: shift phaseStartTime forward by the paused duration
-    // so the remaining time is preserved correctly
-    state.phaseStartTime = Date.now() - (state.phaseDuration - state.currentSec) * 1000;
+  if (state.isPaused){
+    transition('resume');
+  } else {
+    transition('pause');
   }
   DOM.pauseBtn.textContent = state.isPaused ? t('resumeBtn') : t('pauseBtn');
 }
@@ -1091,9 +1238,30 @@ function resetToConfig(){
   state.cfgSnapshot = null; // release snapshot, cfg is mutable again
   showScreen('config-screen');
 }
+// ── SCREEN MANAGEMENT (Punkt 10: lifecycle hooks) ────────────────────────────
+const screenHooks = {
+  'timer-screen': {
+    onLeave(){ releaseWakeLock(); }
+  },
+  'config-screen': {
+    onEnter(){
+      // Reset elapsed display when returning to config
+      if (DOM.totalTime) DOM.totalTime.textContent = '—';
+    }
+  }
+};
+
 function showScreen(id){
+  // Determine currently active screen for onLeave
+  const current = DOM.screens.find(s => s.classList.contains('active'));
+  if (current && screenHooks[current.id]?.onLeave){
+    screenHooks[current.id].onLeave();
+  }
   DOM.screens.forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  if (screenHooks[id]?.onEnter){
+    screenHooks[id].onEnter();
+  }
 }
 </script>
 </body>
