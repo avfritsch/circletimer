@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>CircleTimer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --accent-work: #00e5a0;
+    --accent-pause: #ff6b35;
+    --accent-round: #6c8bff;
+    --text: #f0f0f8;
+    --text-dim: #6b6b80;
+    --border: #2a2a3a;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100dvh; display: flex; flex-direction: column; align-items: center;
+    overflow-x: hidden;
+  }
+
+  .screen { display:none; width:100%; min-height:100dvh; flex-direction:column; align-items:center; }
+  .screen.active { display:flex; }
+
+  /* ── CONFIG ── */
+  #config-screen { padding: 48px 24px 32px; gap:0; }
+
+  .app-title {
+    font-family:'Bebas Neue',sans-serif; font-size:42px; letter-spacing:4px;
+    background: linear-gradient(135deg,var(--accent-work),var(--accent-round));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    margin-bottom:6px;
+  }
+  .app-subtitle { font-size:13px; color:var(--text-dim); letter-spacing:2px; text-transform:uppercase; margin-bottom:20px; }
+
+  /* Preset bar */
+  .preset-bar {
+    width:100%; display:flex; gap:8px; margin-bottom:16px; align-items:center;
+  }
+  .preset-scroll {
+    display:flex; gap:8px; overflow-x:auto; flex:1; padding-bottom:2px;
+    scrollbar-width:none;
+  }
+  .preset-scroll::-webkit-scrollbar { display:none; }
+  .preset-chip {
+    flex-shrink:0; padding:8px 14px; background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; font-size:13px; cursor:pointer; white-space:nowrap;
+    transition:border-color 0.2s, background 0.2s;
+  }
+  .preset-chip.selected { border-color:var(--accent-work); color:var(--accent-work); }
+  .preset-chip-del {
+    font-size:11px; color:var(--text-dim); margin-left:6px; padding:2px 4px;
+    border-radius:6px; cursor:pointer;
+  }
+  .preset-chip-del:active { background:var(--border); }
+  .save-preset-btn {
+    flex-shrink:0; padding:8px 14px; background:var(--surface2); border:1px solid var(--border);
+    border-radius:20px; font-size:13px; color:var(--text-dim); cursor:pointer;
+    white-space:nowrap;
+  }
+
+  /* save modal */
+  .modal-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7);
+    z-index:100; align-items:flex-end; justify-content:center;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:var(--surface); border:1px solid var(--border); border-radius:24px 24px 0 0;
+    padding:28px 24px 48px; width:100%; display:flex; flex-direction:column; gap:16px;
+  }
+  .modal-title { font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:2px; }
+  .modal input {
+    background:var(--surface2); border:1px solid var(--border); border-radius:12px;
+    padding:14px 16px; color:var(--text); font-size:16px; font-family:'DM Sans',sans-serif;
+    outline:none; width:100%;
+  }
+  .modal input:focus { border-color:var(--accent-work); }
+  .modal-btns { display:flex; gap:12px; }
+  .modal-btns button {
+    flex:1; padding:16px; border:none; border-radius:14px; font-family:'Bebas Neue',sans-serif;
+    font-size:18px; letter-spacing:2px; cursor:pointer;
+  }
+  .modal-save { background:var(--accent-work); color:#0a0a0f; }
+  .modal-cancel { background:var(--surface2); color:var(--text); border:1px solid var(--border) !important; }
+
+  .config-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:24px; width:100%; margin-bottom:16px;
+  }
+  .config-card-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+
+  .config-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .config-row:last-child { margin-bottom:0; }
+  .config-label { display:flex; flex-direction:column; gap:2px; }
+  .config-label span:first-child { font-size:15px; font-weight:500; }
+  .config-label span:last-child { font-size:12px; color:var(--text-dim); }
+
+  .stepper { display:flex; align-items:center; background:var(--surface2); border-radius:12px; overflow:hidden; }
+  .stepper button {
+    background:none; border:none; color:var(--text); font-size:22px; width:44px; height:44px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s;
+  }
+  .stepper button:active { background:var(--border); }
+  .stepper-value { font-family:'Bebas Neue',sans-serif; font-size:24px; min-width:52px; text-align:center; letter-spacing:1px; }
+  .stepper-unit { font-size:11px; color:var(--text-dim); padding-right:12px; }
+
+  /* Station names */
+  .stations-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:24px; width:100%; margin-bottom:16px;
+  }
+  .station-inputs { display:flex; flex-direction:column; gap:10px; margin-top:4px; }
+  .station-input-row { display:flex; align-items:center; gap:10px; }
+  .station-num {
+    font-family:'Bebas Neue',sans-serif; font-size:18px; color:var(--text-dim);
+    min-width:24px; text-align:center;
+  }
+  .station-name-input {
+    flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:10px;
+    padding:10px 14px; color:var(--text); font-size:14px; font-family:'DM Sans',sans-serif; outline:none;
+  }
+  .station-name-input:focus { border-color:var(--accent-work); }
+  .station-name-input::placeholder { color:var(--text-dim); }
+
+  .dot-work  { width:8px; height:8px; border-radius:50%; background:var(--accent-work); display:inline-block; margin-right:6px; }
+  .dot-pause { width:8px; height:8px; border-radius:50%; background:var(--accent-pause); display:inline-block; margin-right:6px; }
+  .dot-round { width:8px; height:8px; border-radius:50%; background:var(--accent-round); display:inline-block; margin-right:6px; }
+
+  .start-btn {
+    margin-top:8px; width:100%; padding:20px;
+    background:linear-gradient(135deg,var(--accent-work),#00b87a);
+    border:none; border-radius:18px; font-family:'Bebas Neue',sans-serif;
+    font-size:28px; letter-spacing:3px; color:#0a0a0f; cursor:pointer;
+    transition:transform 0.15s, opacity 0.15s;
+  }
+  .start-btn:active { transform:scale(0.97); opacity:0.9; }
+
+  /* ── TIMER ── */
+  #timer-screen { padding:0; position:relative; justify-content:flex-start; }
+
+  .timer-header {
+    width:100%; display:flex; justify-content:space-between; align-items:center;
+    padding:52px 24px 12px;
+  }
+  .round-badge, .station-badge { display:flex; flex-direction:column; }
+  .round-badge { align-items:flex-start; }
+  .station-badge { align-items:flex-end; }
+  .round-label, .station-label { font-size:11px; color:#d0d0e8; letter-spacing:2px; text-transform:uppercase; font-weight:600; }
+  .round-value, .station-value { font-family:'Bebas Neue',sans-serif; font-size:36px; letter-spacing:2px; line-height:1; }
+
+  /* circle + nav buttons row */
+  .circle-row {
+    display:flex; align-items:center; justify-content:center; width:100%;
+    padding:0 8px; gap:0;
+  }
+  .nav-btn {
+    width:48px; height:48px; border-radius:50%; background:var(--surface2);
+    border:1px solid var(--border); color:var(--text); font-size:22px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    flex-shrink:0; transition:background 0.15s, transform 0.1s;
+  }
+  .nav-btn:active { background:var(--border); transform:scale(0.92); }
+
+  .circle-container {
+    position:relative;
+    width:min(300px, 72vw);
+    height:min(300px, 72vw);
+    flex-shrink:0;
+  }
+
+  #timer-svg { width:100%; height:100%; }
+
+  .timer-center {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    width:60%;
+  }
+  .phase-label { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--text-dim); text-align:center; }
+  .station-name-display {
+    font-size:13px; font-weight:600; text-align:center; line-height:1.2;
+    color:var(--text); max-width:110px; overflow:hidden;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  }
+  .countdown {
+    font-family:'Bebas Neue',sans-serif; font-size:clamp(56px,16vw,78px);
+    letter-spacing:-2px; line-height:1;
+  }
+  .countdown.blink { animation:blink-anim 0.5s ease-in-out infinite; }
+  @keyframes blink-anim { 0%,100%{opacity:1} 50%{opacity:0.15} }
+
+  .timer-controls { display:flex; gap:16px; padding:20px 24px 40px; width:100%; margin-top:auto; }
+  .ctrl-btn {
+    flex:1; padding:18px; border:none; border-radius:16px; font-family:'Bebas Neue',sans-serif;
+    font-size:26px; letter-spacing:2px; cursor:pointer; transition:transform 0.15s, opacity 0.15s;
+  }
+  .ctrl-btn:active { transform:scale(0.96); opacity:0.85; }
+  #pause-btn { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+  #stop-btn  { background:#2a1515; color:#ff5555; border:1px solid #3a2020; }
+
+  /* ── DONE ── */
+  #done-screen { justify-content:center; align-items:center; padding:48px 24px; gap:16px; text-align:center; }
+  .done-icon { font-size:72px; margin-bottom:8px; }
+  .done-title {
+    font-family:'Bebas Neue',sans-serif; font-size:52px; letter-spacing:4px;
+    background:linear-gradient(135deg,var(--accent-work),var(--accent-round));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .done-sub { color:var(--text-dim); font-size:16px; margin-bottom:16px; }
+  .done-stats {
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:24px; width:100%; display:flex; justify-content:space-around; margin-bottom:24px;
+  }
+  .stat { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .stat-num { font-family:'Bebas Neue',sans-serif; font-size:36px; letter-spacing:2px; }
+  .stat-label { font-size:11px; color:var(--text-dim); letter-spacing:1px; text-transform:uppercase; }
+  .again-btn {
+    width:100%; padding:20px; background:linear-gradient(135deg,var(--accent-work),#00b87a);
+    border:none; border-radius:18px; font-family:'Bebas Neue',sans-serif; font-size:24px;
+    letter-spacing:3px; color:#0a0a0f; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── CONFIG ── -->
+<div id="config-screen" class="screen active">
+  <div class="app-title">CircleTimer</div>
+  <div class="app-subtitle">Zirkeltraining · Timer</div>
+
+  <!-- Preset bar -->
+  <div class="preset-bar">
+    <div class="preset-scroll" id="preset-scroll">
+      <div style="font-size:13px;color:var(--text-dim);padding:8px 0;white-space:nowrap">Keine Presets gespeichert</div>
+    </div>
+    <button class="save-preset-btn" onclick="openSaveModal()">＋ Speichern</button>
+  </div>
+
+  <!-- Save modal -->
+  <div class="modal-overlay" id="save-modal" onclick="closeSaveModal(event)">
+    <div class="modal">
+      <div class="modal-title">Preset speichern</div>
+      <input type="text" id="preset-name-input" placeholder="Name (z.B. Morgen-Workout)" maxlength="30"/>
+      <div class="modal-btns">
+        <button class="modal-btns modal-cancel" style="flex:1;padding:16px;border:none;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;background:var(--surface2);color:var(--text);border:1px solid var(--border)" onclick="closeSaveModal()">Abbrechen</button>
+        <button class="modal-save" style="flex:1;padding:16px;border:none;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;background:var(--accent-work);color:#0a0a0f" onclick="savePreset()">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="config-card">
+    <div class="config-card-title">Struktur</div>
+    <div class="config-row">
+      <div class="config-label"><span>Runden</span><span>Wie viele Runden?</span></div>
+      <div class="stepper">
+        <button onclick="change('rounds',-1)">−</button>
+        <div class="stepper-value" id="val-rounds">3</div>
+        <button onclick="change('rounds',1)">+</button>
+      </div>
+    </div>
+    <div class="config-row">
+      <div class="config-label"><span>Stationen</span><span>Übungen pro Runde</span></div>
+      <div class="stepper">
+        <button onclick="change('stations',-1)">−</button>
+        <div class="stepper-value" id="val-stations">6</div>
+        <button onclick="change('stations',1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="config-card">
+    <div class="config-card-title">Zeiten</div>
+    <div class="config-row">
+      <div class="config-label"><span><span class="dot-work"></span>Ausführung</span><span>Aktive Zeit pro Station</span></div>
+      <div class="stepper">
+        <button onclick="change('work',-5)">−</button>
+        <div class="stepper-value" id="val-work">40</div>
+        <button onclick="change('work',5)">+</button>
+        <span class="stepper-unit">s</span>
+      </div>
+    </div>
+    <div class="config-row">
+      <div class="config-label"><span><span class="dot-pause"></span>Pause</span><span>Zwischen Stationen</span></div>
+      <div class="stepper">
+        <button onclick="change('pause',-5)">−</button>
+        <div class="stepper-value" id="val-pause">20</div>
+        <button onclick="change('pause',5)">+</button>
+        <span class="stepper-unit">s</span>
+      </div>
+    </div>
+    <div class="config-row">
+      <div class="config-label"><span><span class="dot-round"></span>Rundenpause</span><span>Zwischen Runden</span></div>
+      <div class="stepper">
+        <button onclick="change('roundPause',-5)">−</button>
+        <div class="stepper-value" id="val-roundPause">60</div>
+        <button onclick="change('roundPause',5)">+</button>
+        <span class="stepper-unit">s</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="start-btn" onclick="startExercise()">▶  STARTEN</button>
+
+  <!-- Station names -->
+  <div class="stations-card">
+    <div class="config-card-title">Stationsnamen <span style="color:var(--text-dim);font-size:10px;margin-left:4px">(optional)</span></div>
+    <div class="station-inputs" id="station-inputs"></div>
+  </div>
+
+</div>
+
+<!-- ── TIMER ── -->
+<div id="timer-screen" class="screen">
+  <div class="timer-header">
+    <div class="round-badge">
+      <span class="round-label">Runde</span>
+      <span class="round-value" id="round-display">1 / 3</span>
+    </div>
+    <div class="station-badge">
+      <span class="station-label">Station</span>
+      <span class="station-value" id="station-display">1 / 6</span>
+    </div>
+  </div>
+
+  <div class="circle-row">
+    <button class="nav-btn" onclick="skipBack()" title="Zurück">‹</button>
+    <div class="circle-container">
+      <svg id="timer-svg" viewBox="0 0 200 200"></svg>
+      <div class="timer-center">
+        <div class="phase-label" id="phase-label">AUSFÜHRUNG</div>
+        <div class="station-name-display" id="station-name-display"></div>
+        <div class="countdown" id="countdown">40</div>
+      </div>
+    </div>
+    <button class="nav-btn" onclick="skipForward()" title="Weiter">›</button>
+  </div>
+
+  <div class="timer-controls">
+    <button class="ctrl-btn" id="pause-btn" onclick="togglePause()">PAUSE</button>
+    <button class="ctrl-btn" id="stop-btn" onclick="stopExercise()">STOP</button>
+  </div>
+</div>
+
+<!-- ── DONE ── -->
+<div id="done-screen" class="screen">
+  <div class="done-icon">🏆</div>
+  <div class="done-title">Fertig!</div>
+  <div class="done-sub">Exercise abgeschlossen</div>
+  <div class="done-stats">
+    <div class="stat"><span class="stat-num" id="done-rounds">—</span><span class="stat-label">Runden</span></div>
+    <div class="stat"><span class="stat-num" id="done-stations">—</span><span class="stat-label">Stationen</span></div>
+    <div class="stat"><span class="stat-num" id="done-time">—</span><span class="stat-label">Minuten</span></div>
+  </div>
+  <button class="again-btn" onclick="resetToConfig()">↺  NOCHMAL</button>
+</div>
+
+<script>
+// ── CONFIG STATE ────────────────────────────────────────────────────────────
+const cfg = { rounds:3, stations:6, work:40, pause:20, roundPause:60 };
+const limits = {
+  rounds:[1,20], stations:[1,20],
+  work:[5,300], pause:[5,300], roundPause:[5,300]
+};
+let stationNames = [];
+
+// ── TIMER STATE ─────────────────────────────────────────────────────────────
+let timer = null;
+let isPaused = false;
+let currentSec = 0;
+let currentPhase = 'work';
+let currentRound = 1;
+let currentStation = 1;
+let startTime = null;
+let audioCtx = null;
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  renderStationInputs();
+  renderPresets();
+});
+
+// ── AUDIO ───────────────────────────────────────────────────────────────────
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function beep(freq=880, duration=0.12, volume=0.5) {
+  try {
+    const ctx = getAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = freq; osc.type = 'sine';
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+// ── VIBRATION ───────────────────────────────────────────────────────────────
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
+// ── CONFIG UI ───────────────────────────────────────────────────────────────
+function change(key, delta) {
+  const [min, max] = limits[key];
+  cfg[key] = Math.min(max, Math.max(min, cfg[key] + delta));
+  document.getElementById('val-' + key).textContent = cfg[key];
+  if (key === 'stations') renderStationInputs();
+}
+
+function renderStationInputs() {
+  const container = document.getElementById('station-inputs');
+  // preserve existing names
+  const existing = stationNames.slice();
+  stationNames = [];
+  container.innerHTML = '';
+  for (let i = 0; i < cfg.stations; i++) {
+    stationNames.push(existing[i] || '');
+    const row = document.createElement('div');
+    row.className = 'station-input-row';
+    row.innerHTML = `
+      <span class="station-num">${i+1}</span>
+      <input class="station-name-input" type="text" placeholder="Station ${i+1}" 
+        value="${existing[i] || ''}" maxlength="24"
+        oninput="stationNames[${i}]=this.value" />
+    `;
+    container.appendChild(row);
+  }
+}
+
+// ── PRESETS ─────────────────────────────────────────────────────────────────
+function loadPresetsFromStorage() {
+  try { return JSON.parse(localStorage.getItem('circletimer_presets') || '[]'); }
+  catch(e) { return []; }
+}
+function savePresetsToStorage(presets) {
+  localStorage.setItem('circletimer_presets', JSON.stringify(presets));
+}
+
+function renderPresets() {
+  const presets = loadPresetsFromStorage();
+  const scroll = document.getElementById('preset-scroll');
+  scroll.innerHTML = '';
+  if (presets.length === 0) {
+    scroll.innerHTML = '<div style="font-size:13px;color:var(--text-dim);padding:8px 0;white-space:nowrap">Keine Presets gespeichert</div>';
+    return;
+  }
+  presets.forEach((p, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'preset-chip';
+    chip.innerHTML = `${p.name}<span class="preset-chip-del" onclick="deletePreset(${i},event)">✕</span>`;
+    chip.addEventListener('click', () => loadPreset(i));
+    scroll.appendChild(chip);
+  });
+}
+
+function openSaveModal() {
+  document.getElementById('preset-name-input').value = '';
+  document.getElementById('save-modal').classList.add('open');
+  setTimeout(() => document.getElementById('preset-name-input').focus(), 100);
+}
+function closeSaveModal(e) {
+  if (e && e.target !== document.getElementById('save-modal')) return;
+  document.getElementById('save-modal').classList.remove('open');
+}
+function savePreset() {
+  const name = document.getElementById('preset-name-input').value.trim();
+  if (!name) { document.getElementById('preset-name-input').focus(); return; }
+  const presets = loadPresetsFromStorage();
+  presets.push({
+    name,
+    cfg: { ...cfg },
+    stationNames: [...stationNames]
+  });
+  savePresetsToStorage(presets);
+  renderPresets();
+  document.getElementById('save-modal').classList.remove('open');
+  vibrate(50);
+}
+function loadPreset(index) {
+  const presets = loadPresetsFromStorage();
+  const p = presets[index];
+  if (!p) return;
+  Object.assign(cfg, p.cfg);
+  // update steppers
+  ['rounds','stations','work','pause','roundPause'].forEach(k => {
+    document.getElementById('val-' + k).textContent = cfg[k];
+  });
+  stationNames = [...(p.stationNames || [])];
+  renderStationInputs();
+  // restore values into inputs
+  stationNames.forEach((name, i) => {
+    const inputs = document.querySelectorAll('.station-name-input');
+    if (inputs[i]) inputs[i].value = name;
+  });
+  vibrate(30);
+}
+function deletePreset(index, e) {
+  e.stopPropagation();
+  const presets = loadPresetsFromStorage();
+  presets.splice(index, 1);
+  savePresetsToStorage(presets);
+  renderPresets();
+  vibrate([30, 30, 30]);
+}
+
+// ── SVG CIRCLE (segmented) ───────────────────────────────────────────────────
+const CX = 100, CY = 100, R = 82;
+const CIRC = 2 * Math.PI * R;
+const GAP_DEG = 2.5; // gap between segments in degrees
+
+function buildCircleSVG() {
+  const svg = document.getElementById('timer-svg');
+  svg.innerHTML = '';
+
+  // background track
+  const bgCircle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  bgCircle.setAttribute('cx', CX); bgCircle.setAttribute('cy', CY); bgCircle.setAttribute('r', R);
+  bgCircle.setAttribute('fill','none'); bgCircle.setAttribute('stroke','var(--surface2)');
+  bgCircle.setAttribute('stroke-width','16');
+  svg.appendChild(bgCircle);
+
+  // Build segment list for one round
+  // [type, duration] pairs
+  const segs = [];
+  for (let s = 0; s < cfg.stations; s++) {
+    segs.push({ type:'work', dur: cfg.work });
+    if (s < cfg.stations - 1) segs.push({ type:'pause', dur: cfg.pause });
+  }
+  const roundDur = segs.reduce((a,s)=>a+s.dur, 0);
+  const totalDeg = 360 - segs.length * GAP_DEG;
+  const colors = { work:'#00e5a0', pause:'#ff6b35', roundPause:'#6c8bff' };
+
+  let angleSoFar = -90;
+
+  segs.forEach((seg, idx) => {
+    const segDeg = (seg.dur / roundDur) * totalDeg;
+    const startAngle = angleSoFar;
+    const endAngle = angleSoFar + segDeg;
+
+    // Background dim arc
+    const bgPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+    bgPath.setAttribute('fill','none');
+    bgPath.setAttribute('stroke', colors[seg.type]);
+    bgPath.setAttribute('stroke-width','16');
+    bgPath.setAttribute('stroke-linecap','butt');
+    bgPath.setAttribute('id', `seg-bg-${idx}`);
+    bgPath.setAttribute('data-start', startAngle);
+    bgPath.setAttribute('data-end', endAngle);
+    bgPath.setAttribute('data-dur', seg.dur);
+    bgPath.style.opacity = '0.2';
+    bgPath.style.transition = 'opacity 0.4s ease';
+    bgPath.setAttribute('d', arcPath(startAngle, endAngle));
+    svg.appendChild(bgPath);
+
+    // Foreground countdown arc — drawn counter-clockwise so dashoffset drains clockwise
+    const fgPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+    fgPath.setAttribute('fill','none');
+    fgPath.setAttribute('stroke', colors[seg.type]);
+    fgPath.setAttribute('stroke-width','16');
+    fgPath.setAttribute('stroke-linecap','butt');
+    fgPath.setAttribute('id', `seg-fg-${idx}`);
+    fgPath.style.opacity = '0';
+    fgPath.style.transition = 'opacity 0.3s ease';
+    // Draw arc CCW (end → start) so that dashoffset shrinks the visible part from the end = clockwise drain
+    fgPath.setAttribute('d', arcPathCCW(startAngle, endAngle));
+    fgPath.setAttribute('pathLength', '1');
+    fgPath.style.strokeDasharray = '1 999';
+    fgPath.style.strokeDashoffset = '0';
+    svg.appendChild(fgPath);
+
+    angleSoFar = endAngle + GAP_DEG;
+  });
+
+  return segs;
+}
+
+function arcPath(startDeg, endDeg) {
+  const startRad = startDeg * Math.PI / 180;
+  const endRad   = endDeg   * Math.PI / 180;
+  const x1 = CX + R * Math.cos(startRad);
+  const y1 = CY + R * Math.sin(startRad);
+  const x2 = CX + R * Math.cos(endRad);
+  const y2 = CY + R * Math.sin(endRad);
+  const diff = endDeg - startDeg;
+  const largeArc = diff > 180 ? 1 : 0;
+  return `M ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 1 ${x2} ${y2}`;
+}
+
+// Counter-clockwise version: starts at endDeg, draws back to startDeg
+// This makes strokeDashoffset drain the arc from the end = visually clockwise drain
+function arcPathCCW(startDeg, endDeg) {
+  const startRad = startDeg * Math.PI / 180;
+  const endRad   = endDeg   * Math.PI / 180;
+  const x1 = CX + R * Math.cos(endRad);   // start at end point
+  const y1 = CY + R * Math.sin(endRad);
+  const x2 = CX + R * Math.cos(startRad); // draw to start point
+  const y2 = CY + R * Math.sin(startRad);
+  const diff = endDeg - startDeg;
+  const largeArc = diff > 180 ? 1 : 0;
+  return `M ${x1} ${y1} A ${R} ${R} 0 ${largeArc} 0 ${x2} ${y2}`; // sweep=0 = CCW
+}
+
+let svgSegs = [];
+
+function updateCircle() {
+  const activeSegIdx = currentPhase === 'work'
+    ? (currentStation - 1) * 2
+    : (currentStation - 1) * 2 + 1;
+
+  const totalPhase = currentPhase === 'work' ? cfg.work
+    : currentPhase === 'pause' ? cfg.pause : cfg.roundPause;
+  const elapsed = 1 - (currentSec / totalPhase); // 0→1 as time runs out
+
+  if (currentPhase === 'roundPause') {
+    // All segs dimmed during round pause
+    svgSegs.forEach((_, idx) => {
+      const bg = document.getElementById(`seg-bg-${idx}`);
+      const fg = document.getElementById(`seg-fg-${idx}`);
+      if (bg) bg.style.opacity = '0.2';
+      if (fg) fg.style.opacity = '0';
+    });
+    return;
+  }
+
+  svgSegs.forEach((seg, idx) => {
+    const bg = document.getElementById(`seg-bg-${idx}`);
+    const fg = document.getElementById(`seg-fg-${idx}`);
+    if (!bg || !fg) return;
+
+    if (idx < activeSegIdx) {
+      // completed segments: full bright
+      bg.style.opacity = '0.6';
+      fg.style.opacity = '0';
+    } else if (idx === activeSegIdx) {
+      // active segment: show countdown drain
+      bg.style.opacity = '0.2';
+      fg.style.opacity = '1';
+      // countdown: starts full (offset=0), drains to empty (offset=1)
+      // strokeDashoffset with pathLength=1: offset = elapsed fraction
+      fg.style.strokeDashoffset = elapsed.toFixed(4);
+      fg.style.transition = 'stroke-dashoffset 0.9s linear, opacity 0.3s ease';
+    } else {
+      // upcoming
+      bg.style.opacity = '0.2';
+      fg.style.opacity = '0';
+    }
+  });
+}
+
+// ── TIMER LOGIC ──────────────────────────────────────────────────────────────
+function startExercise() {
+  try { getAudio(); } catch(e) {}
+  currentRound = 1; currentStation = 1; currentPhase = 'work';
+  currentSec = cfg.work; isPaused = false; startTime = Date.now();
+
+  svgSegs = buildCircleSVG();
+  showScreen('timer-screen');
+  updateDisplay();
+  updateCircle();
+
+  timer = setInterval(tick, 1000);
+}
+
+function tick() {
+  if (isPaused) return;
+  currentSec--;
+
+  const countdown = document.getElementById('countdown');
+  if (currentSec <= 3 && currentSec > 0) {
+    countdown.classList.add('blink');
+    beep(currentPhase === 'work' ? 660 : 440, 0.1, 0.4);
+    vibrate(30);
+  } else {
+    countdown.classList.remove('blink');
+  }
+
+  if (currentSec <= 0) {
+    countdown.classList.remove('blink');
+    advance();
+  } else {
+    updateDisplay();
+    updateCircle();
+  }
+}
+
+function advance() {
+  if (currentPhase === 'work') {
+    if (currentStation < cfg.stations) {
+      currentPhase = 'pause'; currentSec = cfg.pause;
+      beep(440, 0.2, 0.5); vibrate([60, 40, 60]);
+    } else {
+      if (currentRound < cfg.rounds) {
+        currentPhase = 'roundPause'; currentSec = cfg.roundPause;
+        beep(330, 0.4, 0.6); vibrate([100, 50, 100, 50, 100]);
+      } else {
+        finishExercise(); return;
+      }
+    }
+  } else if (currentPhase === 'pause') {
+    currentStation++; currentPhase = 'work'; currentSec = cfg.work;
+    beep(880, 0.15, 0.5); vibrate(80);
+  } else if (currentPhase === 'roundPause') {
+    currentRound++; currentStation = 1; currentPhase = 'work'; currentSec = cfg.work;
+    svgSegs = buildCircleSVG();
+    beep(880, 0.15); setTimeout(()=>beep(1100, 0.25), 150);
+    vibrate([80, 40, 80, 40, 200]);
+  }
+  updateDisplay(); updateCircle();
+}
+
+// ── SKIP ────────────────────────────────────────────────────────────────────
+function skipForward() {
+  vibrate(40);
+  beep(660, 0.08, 0.3);
+  currentSec = 1; // let tick() advance naturally next second
+  // force immediate
+  if (!isPaused) { currentSec = 0; advance(); }
+}
+
+function skipBack() {
+  vibrate(40);
+  beep(440, 0.08, 0.3);
+  // go to start of current phase, or if <3s in → previous phase
+  if (currentSec >= (getPhaseDur() - 2)) {
+    // already at start, go to previous
+    if (currentPhase === 'pause') {
+      currentPhase = 'work'; currentSec = cfg.work;
+    } else if (currentPhase === 'work') {
+      if (currentStation > 1) {
+        currentStation--; currentPhase = 'pause'; currentSec = cfg.pause;
+      } else if (currentRound > 1) {
+        currentRound--; currentStation = cfg.stations; currentPhase = 'work'; currentSec = cfg.work;
+        svgSegs = buildCircleSVG();
+      } else {
+        currentSec = cfg.work; // already at very beginning
+      }
+    } else if (currentPhase === 'roundPause') {
+      currentPhase = 'work'; currentStation = cfg.stations; currentSec = cfg.work;
+    }
+  } else {
+    // restart current phase
+    currentSec = getPhaseDur();
+  }
+  updateDisplay(); updateCircle();
+}
+
+function getPhaseDur() {
+  if (currentPhase === 'work') return cfg.work;
+  if (currentPhase === 'pause') return cfg.pause;
+  return cfg.roundPause;
+}
+
+// ── DISPLAY ──────────────────────────────────────────────────────────────────
+function updateDisplay() {
+  document.getElementById('countdown').textContent = currentSec;
+  document.getElementById('round-display').textContent = `${currentRound} / ${cfg.rounds}`;
+  document.getElementById('station-display').textContent =
+    currentPhase === 'roundPause' ? `— / ${cfg.stations}` : `${currentStation} / ${cfg.stations}`;
+
+  const colors = { work:'var(--accent-work)', pause:'var(--accent-pause)', roundPause:'var(--accent-round)' };
+  document.getElementById('countdown').style.color = colors[currentPhase];
+
+  const phaseEl = document.getElementById('phase-label');
+  const nameEl  = document.getElementById('station-name-display');
+  nameEl.textContent = '';
+
+  if (currentPhase === 'work') {
+    const name = stationNames[currentStation - 1];
+    phaseEl.textContent = name || 'AUSFÜHRUNG';
+    phaseEl.style.color = colors['work'];
+  } else if (currentPhase === 'pause') {
+    const nextName = stationNames[currentStation]; // next station (0-indexed)
+    phaseEl.textContent = nextName || 'PAUSE';
+    phaseEl.style.color = colors['pause'];
+  } else {
+    phaseEl.textContent = 'RUNDENPAUSE';
+    phaseEl.style.color = colors['roundPause'];
+  }
+}
+
+function togglePause() {
+  isPaused = !isPaused;
+  document.getElementById('pause-btn').textContent = isPaused ? 'WEITER' : 'PAUSE';
+  if (isPaused) vibrate(60);
+}
+
+function stopExercise() {
+  clearInterval(timer); timer = null;
+  resetToConfig();
+}
+
+function finishExercise() {
+  clearInterval(timer); timer = null;
+  const elapsed = Math.round((Date.now() - startTime) / 1000);
+  const mins = Math.round(elapsed / 60);
+  document.getElementById('done-rounds').textContent = cfg.rounds;
+  document.getElementById('done-stations').textContent = cfg.rounds * cfg.stations;
+  document.getElementById('done-time').textContent = mins;
+  beep(660, 0.15);
+  setTimeout(()=>beep(880,0.15),200);
+  setTimeout(()=>beep(1100,0.3),400);
+  vibrate([100,50,100,50,200,100,300]);
+  showScreen('done-screen');
+}
+
+function resetToConfig() {
+  if (timer) { clearInterval(timer); timer = null; }
+  showScreen('config-screen');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
